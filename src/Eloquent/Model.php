@@ -99,14 +99,64 @@ abstract class Model extends BaseModel
      * Cassandra does not support the table.column annotation so
      * we override this
      *
-     * @return string
+     * @return string|array
      */
     public function getQualifiedKeyName()
     {
         return $this->getKeyName();
     }
 
-     /**
+    /**
+     * Set the keys for a save update query.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    protected function setKeysForSaveQuery(Builder $query)
+    {
+        $keys = !is_array($this->getKeyName()) ? [$this->getKeyName()] : $this->getKeyName();
+
+        foreach ($keys as $key) {
+            $value = $this->getKeyForSaveQuery($key);
+
+            $query->where($key, '=', $value);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Get the primary key value for a save query.
+     *
+     * @return mixed
+     */
+    protected function getKeyForSaveQuery($key = null)
+    {
+        if ($key === null) {
+            return $this->original[$this->getFirstKeyName()]
+                ?? $this->getAttribute($this->getFirstKeyName());
+        }
+
+        return $this->original[$key]
+            ?? $this->getAttribute($key);
+    }
+
+    /**
+     * Get first part of primary key
+     *
+     * @return array|string
+     */
+    protected function getFirstKeyName()
+    {
+        $keys = $this->getKeyName();
+        if (is_array($keys)) {
+            return reset($keys);
+        }
+
+        return $keys;
+    }
+
+    /**
      * Set a given attribute on the model.
      *
      * @param  string  $key
@@ -146,7 +196,18 @@ abstract class Model extends BaseModel
 
         return $this;
     }
-    
+
+    /**
+     * Get a new query to restore one or more models by their queueable IDs.
+     *
+     * @param  array|int  $ids
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function newQueryForRestoration($ids)
+    {
+        return $this->newQueryWithoutScopes()->whereKey($ids);
+    }
+
     /**
      * @inheritdoc
      */
