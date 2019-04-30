@@ -106,7 +106,7 @@ class Builder extends EloquentBuilder
      */
     protected function addUpdatedAtColumn(array $values)
     {
-        if (! $this->model->usesTimestamps() ||
+        if (!$this->model->usesTimestamps() ||
             is_null($this->model->getUpdatedAtColumn())) {
             return $values;
         }

@@ -217,18 +217,7 @@ class Connection extends \Illuminate\Database\Connection
      */
     public function select($query, $bindings = [], $useReadPdo = true, array $customOptions = [])
     {
-        return $this->run($query, $bindings, function ($query, $bindings) use ($useReadPdo, $customOptions) {
-            if ($this->pretending()) {
-                return [];
-            }
-
-            $preparedStatement = $this->session->prepare($query);
-
-            //Add bindings
-            $customOptions['arguments'] = $bindings;
-
-            return $this->session->execute($preparedStatement, $customOptions);
-        });
+        return $this->runStatement($query, $bindings, $customOptions);
     }
 
     /**
@@ -275,7 +264,7 @@ class Connection extends \Illuminate\Database\Connection
     }
 
     /**
-     * Execute an SQL statement and return the boolean result.
+     * Execute an CQL statement and return the boolean result.
      *
      * @param  string  $query
      * @param  array   $bindings
@@ -285,19 +274,7 @@ class Connection extends \Illuminate\Database\Connection
      */
     public function statement($query, $bindings = [], array $customOptions = [])
     {
-        return $this->run($query, $bindings, function ($query, $bindings) use ($customOptions) {
-            if ($this->pretending()) {
-                return [];
-            }
-
-            $preparedStatement = $this->session->prepare($query);
-            //$this->recordsHaveBeenModified();
-
-            //Add bindings
-            $customOptions['arguments'] = $bindings;
-
-            return $this->session->execute($preparedStatement, $customOptions);
-        });
+        return $this->runStatement($query, $bindings, $customOptions);
     }
 
     /**
@@ -313,21 +290,7 @@ class Connection extends \Illuminate\Database\Connection
      */
     public function affectingStatement($query, $bindings = [], array $customOptions = [])
     {
-        return $this->run($query, $bindings, function ($query, $bindings) use ($customOptions) {
-            if ($this->pretending()) {
-                return 0;
-            }
-
-            $preparedStatement = $this->session->prepare($query);
-            //$this->recordsHaveBeenModified();
-
-            //Add bindings
-            $customOptions['arguments'] = $bindings;
-
-            $this->session->execute($preparedStatement, $customOptions);
-
-            return 1;
-        });
+        return $this->runStatement($query, $bindings, $customOptions, 0, 1);
     }
 
     /**
@@ -376,5 +339,34 @@ class Connection extends \Illuminate\Database\Connection
     public function __call($method, $parameters)
     {
         return call_user_func_array([$this->cluster, $method], $parameters);
+    }
+
+    /**
+     * Execute an CQL statement and return the boolean result.
+     *
+     * @param string $query
+     * @param array $bindings
+     * @param array $customOptions
+     * @param mixed $defaultFailed
+     * @param mixed $defaultSuccess
+     *
+     * @return mixed
+     */
+    protected function runStatement($query, $bindings = [], array $customOptions = [], $defaultFailed = [], $defaultSuccess = null)
+    {
+        return $this->run($query, $bindings, function ($query, $bindings) use ($defaultFailed, $customOptions, $defaultFailed, $defaultSuccess) {
+            if ($this->pretending()) {
+                return $defaultFailed;
+            }
+
+            $preparedStatement = $this->session->prepare($query);
+
+            //Add bindings
+            $customOptions['arguments'] = $bindings;
+
+            $result = $this->session->execute($preparedStatement, $customOptions);
+
+            return $defaultSuccess === null ? $result : $defaultSuccess;
+        });
     }
 }
