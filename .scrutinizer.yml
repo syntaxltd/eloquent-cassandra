@@ -128,7 +128,7 @@ build:
             - sudo apt-get install -y software-properties-common
             - sudo add-apt-repository ppa:ondrej/php -y
             - sudo apt-get update
-            - sudo apt-get install -y php7.1-dev ntp
+            - sudo apt-get install -y php7.1-dev php7.1-xdebug ntp
             - sudo apt-get install -y libstdc++6 build-essential curl cmake g++ libpcre3-dev libssl-dev make openssl openjdk-8-jre python-dev python-setuptools libgmp-dev
 #            - sudo apt-get install -y libssl1.0.0=1.0.2r
 #            - sudo apt-get install -y libstdc++6=5
@@ -155,8 +155,7 @@ build:
             - ~/.cache/pip
     tests:
         override:
-            -
-                command: 'vendor/bin/phpunit --coverage-clover build/logs/clover.xml'
-                coverage:
-                    file: 'build/logs/clover.xml'
-                    format: 'clover'
+            - command: 'vendor/bin/phpunit --coverage-clover build/logs/clover.xml'
+              coverage:
+                  file: 'build/logs/clover.xml'
+                  format: 'clover'

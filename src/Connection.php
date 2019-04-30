@@ -354,7 +354,7 @@ class Connection extends \Illuminate\Database\Connection
      */
     protected function runStatement($query, $bindings = [], array $customOptions = [], $defaultFailed = [], $defaultSuccess = null)
     {
-        return $this->run($query, $bindings, function ($query, $bindings) use ($defaultFailed, $customOptions, $defaultFailed, $defaultSuccess) {
+        return $this->run($query, $bindings, function ($query, $bindings) use ($customOptions, $defaultFailed, $defaultSuccess) {
             if ($this->pretending()) {
                 return $defaultFailed;
             }
