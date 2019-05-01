@@ -49,14 +49,11 @@ class Connection extends \Illuminate\Database\Connection
             $this->config['page_size'] = self::DEFAULT_PAGE_SIZE;
         }
 
-        // You can pass options directly to the Cassandra constructor
-        $options = array_get($config, 'options', []);
-
         // Create the connection
-        $this->cluster = $this->createCluster($config, $options);
+        $this->cluster = $this->createCluster($config);
 
-        if (isset($options['database']) || isset($config['keyspace'])) {
-            $keyspaceName = isset($options['database']) ? $options['database'] : $config['keyspace'];
+        if (isset($config['keyspace'])) {
+            $keyspaceName = $config['keyspace'];
 
             $this->keyspace = $keyspaceName;
             $this->session = $this->cluster->connect($keyspaceName);
@@ -118,69 +115,54 @@ class Connection extends \Illuminate\Database\Connection
      * Create a new Cassandra cluster object.
      *
      * @param  array   $config
-     * @param  array   $options
+     *
      * @return \Cassandra\Cluster
      */
-    protected function createCluster(array $config, array $options)
+    protected function createCluster(array $config)
     {
         $cluster = Cassandra::cluster();
 
-        // Check if the credentials are not already set in the options
-        if (!isset($options['username']) && !empty($config['username'])) {
-            $options['username'] = $config['username'];
-        }
-        if (!isset($options['password']) && !empty($config['password'])) {
-            $options['password'] = $config['password'];
-        }
-
         // Authentication
-        if (isset($options['username']) && isset($options['password'])) {
-            $cluster->withCredentials($options['username'], $options['password']);
+        if (isset($config['username']) && isset($config['password'])) {
+            $cluster->withCredentials($config['username'], $config['password']);
         }
 
         // Contact Points/Host
-        if (isset($options['contactpoints']) || (isset($config['host']) && !empty($config['host']))) {
+        if (!empty($config['host'])) {
             $contactPoints = $config['host'];
-
-            if (isset($options['contactpoints'])) {
-                $contactPoints = $options['contactpoints'];
-            }
 
             if (is_array($contactPoints)) {
                 $contactPoints = implode(',', $contactPoints);
             }
 
-            $contactPoints = !empty($contactPoints) ? $contactPoints : '127.0.0.1';
-
             $cluster->withContactPoints($contactPoints);
         }
 
-        if (!isset($options['port']) && !empty($config['port'])) {
+        if (!empty($config['port'])) {
             $cluster->withPort((int) $config['port']);
         }
 
-        if (array_key_exists('page_size', $config) && !empty($config['page_size'])) {
-            $cluster->withDefaultPageSize(intval($config['page_size'] ?? self::DEFAULT_PAGE_SIZE));
-        }
+        $cluster->withDefaultPageSize(intval(!empty($config['page_size']) ? $config['page_size'] : self::DEFAULT_PAGE_SIZE));
 
-        if (array_key_exists('consistency', $config) && in_array(strtoupper($config['consistency']), [
+        if (isset($config['consistency']) && in_array($config['consistency'], [
                 Cassandra::CONSISTENCY_ANY, Cassandra::CONSISTENCY_ONE, Cassandra::CONSISTENCY_TWO,
                 Cassandra::CONSISTENCY_THREE, Cassandra::CONSISTENCY_QUORUM, Cassandra::CONSISTENCY_ALL,
                 Cassandra::CONSISTENCY_SERIAL, Cassandra::CONSISTENCY_QUORUM, Cassandra::CONSISTENCY_LOCAL_QUORUM,
                 Cassandra::CONSISTENCY_EACH_QUORUM, Cassandra::CONSISTENCY_LOCAL_SERIAL, Cassandra::CONSISTENCY_LOCAL_ONE,
             ])) {
+
             $cluster->withDefaultConsistency($config['consistency']);
         }
 
-        if (array_key_exists('timeout', $config) && !empty($config['timeout'])) {
+        if (!empty($config['timeout'])) {
             $cluster->withDefaultTimeout(intval($config['timeout']));
         }
 
-        if (array_key_exists('connect_timeout', $config) && !empty($config['connect_timeout'])) {
+        if (!empty($config['connect_timeout'])) {
             $cluster->withConnectTimeout(floatval($config['connect_timeout']));
         }
 
-        if (array_key_exists('request_timeout', $config) && !empty($config['request_timeout'])) {
+        if (!empty($config['request_timeout'])) {
             $cluster->withRequestTimeout(floatval($config['request_timeout']));
         }
 
