@@ -174,7 +174,8 @@ class Connection extends \Illuminate\Database\Connection
      */
     public function disconnect()
     {
-        unset($this->connection);
+        $this->session->close();
+        $this->session = null;
     }
 
     /**
@@ -307,7 +308,7 @@ class Connection extends \Illuminate\Database\Connection
     protected function reconnectIfMissingConnection()
     {
         if (is_null($this->session)) {
-            $this->session = $this->createCluster($this->config, [])->connect($this->keyspace);
+            $this->session = $this->createCluster($this->config)->connect($this->keyspace);
         }
     }
 

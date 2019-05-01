@@ -5,7 +5,7 @@ class ConnectionTest extends TestCase
     public function testConnection()
     {
         $connection = DB::connection('cassandra');
-        $this->assertInstanceOf('lroman242\LaravelCassandra\Connection', $connection);
+        $this->assertInstanceOf(\lroman242\LaravelCassandra\Connection::class, $connection);
     }
 
     public function testReconnect()
@@ -46,5 +46,50 @@ class ConnectionTest extends TestCase
     {
         $driver = DB::connection('cassandra')->getDriverName();
         $this->assertEquals('cassandra', $driver);
+    }
+
+    public function testConnectionGetCassandraCluster()
+    {
+        $cluster = \Illuminate\Support\Facades\DB::connection('cassandra')->getCassandraCluster();
+
+        $this->assertInstanceOf(\Cassandra\Cluster::class, $cluster);
+    }
+
+    public function testConnectionGetCassandraSession()
+    {
+        $session = \Illuminate\Support\Facades\DB::connection('cassandra')->getCassandraSession();
+
+        $this->assertInstanceOf(\Cassandra\Session::class, $session);
+    }
+
+    public function testConnectionGetKeyspace()
+    {
+        $keyspace = \Illuminate\Support\Facades\DB::connection('cassandra')->getKeyspace();
+
+        $this->assertEquals($keyspace, $this->app['config']->get('database.connections.cassandra.keyspace'));
+    }
+
+    public function testConnectionDisconnect()
+    {
+        $connection = \Illuminate\Support\Facades\DB::connection('cassandra');
+        $connection->disconnect();
+
+        $this->assertNull($connection->getCassandraSession());
+    }
+
+    public function testConnectionReconnectIfMissingConnection()
+    {
+        DB::enableQueryLog();
+
+        $connection = \Illuminate\Support\Facades\DB::connection('cassandra');
+        $connection->disconnect();
+
+        $this->assertNull($connection->getCassandraSession());
+
+        $connection->table('testtable')->first();
+
+        $this->assertEquals(1, count(DB::getQueryLog()));
+
+        $this->assertInstanceOf(\Cassandra\Session::class, $connection->getCassandraSession());
     }
 }
