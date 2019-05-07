@@ -128,10 +128,8 @@ build:
             - sudo apt-get install -y software-properties-common
             - sudo add-apt-repository ppa:ondrej/php -y
             - sudo apt-get update
-            - sudo apt-get install -y php7.1-dev php7.1-xdebug ntp
+            - sudo apt-get install -y ntp
             - sudo apt-get install -y libstdc++6 build-essential curl cmake g++ libpcre3-dev libssl-dev make openssl openjdk-8-jre python-dev python-setuptools libgmp-dev
-#            - sudo apt-get install -y libssl1.0.0=1.0.2r
-#            - sudo apt-get install -y libstdc++6=5
             - cd /tmp && wget http://downloads.datastax.com/cpp-driver/ubuntu/14.04/dependencies/libuv/v1.28.0/libuv1_1.28.0-1_amd64.deb && wget http://downloads.datastax.com/cpp-driver/ubuntu/14.04/dependencies/libuv/v1.28.0/libuv1-dev_1.28.0-1_amd64.deb
             - sudo dpkg -i libuv1_1.28.0-1_amd64.deb
             - sudo dpkg -i libuv1-dev_1.28.0-1_amd64.deb

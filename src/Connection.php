@@ -131,11 +131,11 @@ class Connection extends \Illuminate\Database\Connection
         if (!empty($config['host'])) {
             $contactPoints = $config['host'];
 
-            if (is_array($contactPoints)) {
-                $contactPoints = implode(',', $contactPoints);
+            if (is_string($contactPoints)) {
+                $contactPoints = explode(',', $contactPoints);
             }
 
-            $cluster->withContactPoints($contactPoints);
+            call_user_func_array([$cluster, 'withContactPoints'], (array)$contactPoints);
         }
 
         if (!empty($config['port'])) {
@@ -196,11 +196,11 @@ class Connection extends \Illuminate\Database\Connection
      * @param  bool  $useReadPdo
      * @param  array  $customOptions
      *
-     * @return array
+     * @return mixed
      */
     public function select($query, $bindings = [], $useReadPdo = true, array $customOptions = [])
     {
-        return $this->runStatement($query, $bindings, $customOptions);
+        return $this->statement($query, $bindings, $customOptions);
     }
 
     /**
@@ -253,7 +253,7 @@ class Connection extends \Illuminate\Database\Connection
      * @param  array   $bindings
      * @param  array  $customOptions
      *
-     * @return bool
+     * @return mixed
      */
     public function statement($query, $bindings = [], array $customOptions = [])
     {
