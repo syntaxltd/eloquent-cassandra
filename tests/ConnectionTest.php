@@ -157,7 +157,7 @@ class ConnectionTest extends TestCase
         $this->assertEquals(1, $rows->count());
 
         foreach ($rows as $row) {
-            $this->assertEquals('moo', $row['name']);
+            $this->assertEquals('value' . $row['id'], $row['name']);
         }
     }
 
@@ -171,14 +171,14 @@ class ConnectionTest extends TestCase
 
         $query = "INSERT INTO testtable (id, name) VALUES (?, ?)";
 
-        for ($i = 5; $i <= 10; $i++) {
+        for ($i = 11; $i <= 15; $i++) {
             DB::connection('cassandra')->select($query, [$i, "newValue$i"]);
         }
 
-        $this->assertEquals(6, count(DB::getQueryLog()));
+        $this->assertEquals(5, count(DB::getQueryLog()));
 
         $rows = DB::connection('cassandra')->table('testtable')->get();
-        $this->assertEquals(10, $rows->count());
+        $this->assertEquals(15, $rows->count());
     }
 
     /**
@@ -208,4 +208,70 @@ class ConnectionTest extends TestCase
         $this->assertEquals(5, $rowsNext->count());
         $this->assertTrue($rowsNext->isLastPage());
     }
+
+    /**
+     * Check bulk statements
+     */
+    public function testConnectionInsertBulk()
+    {
+        $queries = [];
+        $bindings = [];
+        for ($i = 11; $i <= 15; $i++) {
+            $queries[] = "INSERT INTO testtable (id, name) VALUES (:id, :name)";
+            $bindings[] = ['id' => $i, 'name' => 'value' . $i];
+        }
+
+        /** @var \Cassandra\Rows $result */
+        $result = DB::connection('cassandra')->insertBulk($queries, $bindings);
+        $this->assertTrue(!$result[0]['[applied]']);
+        $rows = DB::connection('cassandra')->table('testtable')->get();
+        $this->assertEquals(15, $rows->count());
+    }
+
+    /**
+     * Check bulk statements
+     */
+    public function testConnectionBatchStatementWithSelect()
+    {
+        $queries = [];
+        $bindings = [];
+        for ($i = 11; $i <= 15; $i++) {
+            $queries[] = "INSERT INTO testtable (id, name) VALUES (:id, :name)";
+            $bindings[] = ['id' => $i, 'name' => 'value' . $i];
+        }
+        $queries[] = "SELECT * FROM testtable WHERE id = ?";
+        $bindings[] = [11];
+
+        // only INSERT, UPDATE, DELETE
+        $this->expectException(\Exception::class);
+
+        /** @var \Cassandra\Rows $result */
+        DB::connection('cassandra')->batchStatement($queries, $bindings);
+    }
+
+    /**
+     * Check processing batch statement with wrong batch type
+     */
+    public function testConnectionBatchStatementWithWrongType()
+    {
+        $queries = [];
+        $bindings = [];
+        for ($i = 11; $i <= 15; $i++) {
+            $queries[] = "INSERT INTO testtable (id, name) VALUES (:id, :name)";
+            $bindings[] = ['id' => $i, 'name' => 'value' . $i];
+        }
+
+        // only UPDATE for counters
+        $this->expectException(\Exception::class);
+
+        /** @var \Cassandra\Rows $result */
+        DB::connection('cassandra')->insertBulk($queries, $bindings, \Cassandra::BATCH_COUNTER);
+    }
+
+    //TODO: test batch counter
+    //TODO: test batch unlogged
+    //TODO: test batch with custom options
+    //TODO: test affectingStatement method
+    //TODO: test transaction methods
+
 }

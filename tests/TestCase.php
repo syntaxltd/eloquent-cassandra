@@ -33,5 +33,10 @@ class TestCase extends Orchestra\Testbench\TestCase
         $app['config']->set('auth.model', 'User');
         $app['config']->set('auth.providers.users.model', 'User');
         $app['config']->set('cache.driver', 'array');
+
+        DB::connection('cassandra')->select('TRUNCATE testtable');
+        for ($i = 1; $i <= 10; $i++) {
+            DB::connection('cassandra')->select('INSERT INTO testtable (id, name) VALUES (?, ?)', [$i, "value$i"]);
+        }
     }
 }

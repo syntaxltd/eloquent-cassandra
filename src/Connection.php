@@ -4,7 +4,6 @@ namespace lroman242\LaravelCassandra;
 
 use Cassandra;
 use Cassandra\BatchStatement;
-use Closure;
 use lroman242\LaravelCassandra\Exceptions\NotSupportedException;
 
 class Connection extends \Illuminate\Database\Connection
@@ -358,7 +357,7 @@ class Connection extends \Illuminate\Database\Connection
     /**
      * @inheritDoc
      */
-    public function transaction()
+    public function transaction(\Closure $callback, $attempts = 1)
     {
         throw new NotSupportedException("Transactions is not supported by Cassandra database");
     }

@@ -1,12 +1,6 @@
 #!/bin/sh
 set -e
 
-# Install PHP 7.1-dev
-sudo apt-get install software-properties-common
-sudo add-apt-repository ppa:ondrej/php -y
-sudo apt-get update
-sudo apt-get install -y php7.1-dev
-
 # Install libuv from source since there is no libuv-dev package in Precise
 cd /tmp && wget http://downloads.datastax.com/cpp-driver/ubuntu/16.04/dependencies/libuv/v1.24.0/libuv1_1.24.0-1_amd64.deb && wget http://downloads.datastax.com/cpp-driver/ubuntu/16.04/dependencies/libuv/v1.24.0/libuv1-dev_1.24.0-1_amd64.deb
 sudo dpkg -i libuv1_1.24.0-1_amd64.deb
