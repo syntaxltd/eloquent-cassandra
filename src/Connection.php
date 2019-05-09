@@ -4,6 +4,8 @@ namespace lroman242\LaravelCassandra;
 
 use Cassandra;
 use Cassandra\BatchStatement;
+use Closure;
+use lroman242\LaravelCassandra\Exceptions\NotSupportedException;
 
 class Connection extends \Illuminate\Database\Connection
 {
@@ -135,7 +137,7 @@ class Connection extends \Illuminate\Database\Connection
                 $contactPoints = explode(',', $contactPoints);
             }
 
-            call_user_func_array([$cluster, 'withContactPoints'], (array)$contactPoints);
+            call_user_func_array([$cluster, 'withContactPoints'], (array) $contactPoints);
         }
 
         if (!empty($config['port'])) {
@@ -352,4 +354,67 @@ class Connection extends \Illuminate\Database\Connection
             return $defaultSuccess === null ? $result : $defaultSuccess;
         });
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function transaction()
+    {
+        throw new NotSupportedException("Transactions is not supported by Cassandra database");
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function beginTransaction()
+    {
+        throw new NotSupportedException("Transactions is not supported by Cassandra database");
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function commit()
+    {
+        throw new NotSupportedException("Transactions is not supported by Cassandra database");
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function rollBack()
+    {
+        throw new NotSupportedException("Transactions is not supported by Cassandra database");
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function transactionLevel()
+    {
+        throw new NotSupportedException("Transactions is not supported by Cassandra database");
+    }
+
+    //TODO: override isDoctrineAvailable method
+    //TODO: override getDoctrineColumn method
+    //TODO: override getDoctrineSchemaManager method
+    //TODO: override getDoctrineConnection method
+    //TODO: override getPdo method
+    //TODO: override getReadPdo method
+    //TODO: override setPdo method
+    //TODO: override setReadPdo method
+    //TODO: override setReconnector method
+    //TODO: override reconnect method
+    //TODO: override query method
+
+    //TODO: override bindValues method
+    //TODO: override cursor method
+    //TODO: override unprepared method
+
+    //TODO: check prepareBindings method
+
+    //TODO: provide interface for $this->session->executeAsync
+    //TODO: provide interface for $this->session->prepareAsync
+    //TODO: provide interface for $this->session->closeAsync
+    //TODO: provide interface for $this->session->schema
 }
