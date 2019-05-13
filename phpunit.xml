@@ -23,9 +23,7 @@
     </testsuites>
     <filter>
         <whitelist addUncoveredFilesFromWhitelist="true">
-            <directory>tests/config</directory>
-            <directory>tests/models</directory>
-            <directory>./fake</directory>
+            <directory>src/</directory>
         </whitelist>
     </filter>
 </phpunit>

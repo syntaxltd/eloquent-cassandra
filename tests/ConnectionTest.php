@@ -271,7 +271,80 @@ class ConnectionTest extends TestCase
     //TODO: test batch counter
     //TODO: test batch unlogged
     //TODO: test batch with custom options
-    //TODO: test affectingStatement method
+
+
+    /**
+     * Test update function with query and bindings
+     * expect to get number of affected rows equal 1
+     */
+    public function testConnectionUpdateWithBinding()
+    {
+        $newName = "updatedName";
+        $affectedRows = DB::connection('cassandra')->update('UPDATE testtable SET name = ? WHERE id = ?', [$newName, 3]);
+
+        $this->assertEquals(1, $affectedRows);
+
+        /** @var \Cassandra\Rows $rows */
+        $rows = DB::connection('cassandra')->select('SELECT * FROM testtable WHERE id = ?', [3]);
+        $this->assertEquals(1, $rows->count());
+        $this->assertEquals($newName, $rows->first()['name']);
+    }
+
+    /**
+     * Test update function with query and bindings
+     * expect to get number of affected rows
+     */
+    public function testConnectionMultipleUpdate()
+    {
+        $newName = "updatedName";
+        $affectedRows = DB::connection('cassandra')->update('UPDATE testtable SET name = ? WHERE id IN (?, ?, ?)', [$newName, 1, 2, 3]);
+
+        //Still expect 1 as result because Cassandra is an eventually consistent database,
+        // it's not possible to obtain the affected count for statements
+        $this->assertEquals(1, $affectedRows);
+
+        /** @var \Cassandra\Rows $rows */
+        $rows = DB::connection('cassandra')->select('SELECT * FROM testtable WHERE id IN (?, ?, ?)', [1, 2, 3]);
+        $this->assertEquals(3, $rows->count());
+
+        foreach ($rows as $row) {
+            $this->assertEquals($row['name'], $newName);
+        }
+    }
+
+    /**
+     * Test update function with query and bindings
+     * expect to get number of affected rows
+     */
+    public function testConnectionDelete()
+    {
+        $affectedRows = DB::connection('cassandra')->update('DELETE FROM testtable WHERE id = ?', [3]);
+
+        $this->assertEquals(1, $affectedRows);
+
+        /** @var \Cassandra\Rows $rows */
+        $rows = DB::connection('cassandra')->select('SELECT * FROM testtable WHERE id = ?', [3]);
+        $this->assertEquals(0, $rows->count());
+    }
+
+
+    /**
+     * Test update function with query and bindings
+     * expect to get number of affected rows
+     */
+    public function testConnectionMultipleDelete()
+    {
+        $affectedRows = DB::connection('cassandra')->update('DELETE FROM testtable WHERE id IN (?, ?, ?)', [1, 2, 3]);
+
+        //Still expect 1 as result because Cassandra is an eventually consistent database,
+        // it's not possible to obtain the affected count for statements
+        $this->assertEquals(1, $affectedRows);
+
+        /** @var \Cassandra\Rows $rows */
+        $rows = DB::connection('cassandra')->select('SELECT * FROM testtable WHERE id IN (?, ?, ?)', [1, 2, 3]);
+        $this->assertEquals(0, $rows->count());
+    }
+
     //TODO: test transaction methods
 
 }
