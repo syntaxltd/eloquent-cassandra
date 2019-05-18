@@ -243,3 +243,14 @@ TODO:
 - improved model update
 - full test coverage
 - fix diff between \Cassandra\Date with Carbon
+
+Docker:
+------
+There is Dockerfile stored in package root. It can be used for local development and test running.
+
+
+Run command below inside of the container to run tests and generate coverage file:
+
+```sh
+vendor/bin/phpunit --coverage-clover clover.xml
+```

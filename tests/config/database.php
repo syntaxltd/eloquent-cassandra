@@ -9,6 +9,7 @@ return [
             'driver' => 'cassandra',
             'host' => '127.0.0.1',
             'keyspace' => 'unittest',
+            'port' => 9042,
             'consistency' => Cassandra::CONSISTENCY_LOCAL_ONE,
             'timeout' => null,
             'connect_timeout' => 5.0,
