@@ -3,7 +3,7 @@
 namespace lroman242\LaravelCassandra\Exceptions;
 
 
-class NotSupportedException extends \RuntimeException
+class CassandraNotSupportedException extends \RuntimeException
 {
 
 }

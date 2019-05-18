@@ -1,0 +1,44 @@
+version: '3'
+
+services:
+
+  main:
+    build: ./docker
+    tty: true
+    volumes:
+      - ./:/var/www
+    working_dir: /var/www
+    command: "/init/init.sh"
+    links:
+      - cassandra
+    depends_on:
+      - cassandra
+
+  cassandra:
+    image: cassandra:latest
+    environment:
+      CASSANDRA_CLUSTER_NAME: laravelcassandra
+      CASSANDRA_START_RPC: 'true'
+      CASSANDRA_RPC_ADDRESS: 0.0.0.0
+    command: "sh /cassandra-init.sh"
+    healthcheck:
+      test: ["CMD-SHELL", "[ $$(nodetool statusgossip) = running ]"]
+    expose:
+      - 7000
+      - 7001
+      - 7199
+      - 9042
+      - 9160
+    ports:
+      - 7000:7000
+      - 7001:7001
+      - 7199:7199
+      - 9160:9160
+      - 9042:9042
+    volumes:
+      - laravel-cassandra-storage:/var/lib/cassandra
+      - ./docker/cassandra-init.sh:/cassandra-init.sh
+      - ./setup_cassandra_unittest_keyspace.cql:/docker-entrypoint-initdb.d/init.cql
+
+volumes:
+  laravel-cassandra-storage:

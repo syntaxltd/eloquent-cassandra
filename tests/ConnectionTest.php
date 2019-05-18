@@ -2,6 +2,7 @@
 
 use \Illuminate\Support\Facades\DB;
 use \lroman242\LaravelCassandra\Connection;
+use \lroman242\LaravelCassandra\Exceptions\CassandraNotSupportedException;
 
 class ConnectionTest extends TestCase
 {
@@ -345,6 +346,61 @@ class ConnectionTest extends TestCase
         $this->assertEquals(0, $rows->count());
     }
 
-    //TODO: test transaction methods
+    /**
+     * Cassandra doesn't support transactions
+     */
+    public function testConnectionTransaction()
+    {
+        $this->expectException(CassandraNotSupportedException::class);
 
+        DB::connection('cassandra')->transaction(function ($query) {
+            $query->get();
+        }, 5);
+    }
+
+    /**
+     * Cassandra doesn't support transactions
+     */
+    public function testConnectionBeginTransaction()
+    {
+        $this->expectException(CassandraNotSupportedException::class);
+
+        DB::connection('cassandra')->beginTransaction();
+    }
+
+    /**
+     * Cassandra doesn't support transactions
+     */
+    public function testConnectionRollback()
+    {
+        $this->expectException(CassandraNotSupportedException::class);
+
+        DB::connection('cassandra')->rollback();
+    }
+
+    /**
+     * Cassandra doesn't support transactions
+     */
+    public function testConnectionCommit()
+    {
+        $this->expectException(CassandraNotSupportedException::class);
+
+        DB::connection('cassandra')->commit();
+    }
+
+    /**
+     * Cassandra doesn't support transactions
+     */
+    public function testConnectionTransactionLevel()
+    {
+        $this->expectException(CassandraNotSupportedException::class);
+
+        DB::connection('cassandra')->transactionLevel();
+    }
+
+    public function testConnectionMagicCall()
+    {
+        $rows = DB::connection('cassandra')->execute('SELECT * FROM testtable LIMIT 3');
+        $this->assertEquals(3, $rows->count());
+    }
 }

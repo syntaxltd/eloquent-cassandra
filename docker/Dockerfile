@@ -18,12 +18,6 @@ RUN cd /tmp && wget http://downloads.datastax.com/cpp-driver/ubuntu/16.04/cassan
 RUN dpkg -i /tmp/cassandra-cpp-driver_2.11.0-1_amd64.deb
 RUN dpkg -i /tmp/cassandra-cpp-driver-dev_2.11.0-1_amd64.deb
 
-RUN rm -rf /var/lib/cassandra/* /etc/init.d/cassandra /etc/security/limits.d/cassandra.conf
-
-RUN echo "deb http://www.apache.org/dist/cassandra/debian 311x main" | tee -a /etc/apt/sources.list.d/cassandra.sources.list
-RUN curl https://www.apache.org/dist/cassandra/KEYS | apt-key add -
-RUN apt-get update && apt-get install -y cassandra
-
 RUN update-alternatives --set php /usr/bin/php7.1
 RUN update-alternatives --set phar /usr/bin/phar7.1
 RUN update-alternatives --set phar.phar /usr/bin/phar.phar7.1
@@ -36,11 +30,10 @@ RUN curl -sS https://getcomposer.org/installer | php -- \
         --install-dir=/usr/local/bin && \
         echo "alias composer='composer'" >> /root/.bashrc
 
-ADD . /var/www
 WORKDIR /var/www
 
 EXPOSE 9000
 
 VOLUME ["/var/www"]
 
-ENTRYPOINT service cassandra start && composer install && /bin/sleep 10 && /usr/bin/cqlsh -f /var/www/setup_cassandra_unittest_keyspace.cql && /bin/bash
+ENTRYPOINT /bin/bash

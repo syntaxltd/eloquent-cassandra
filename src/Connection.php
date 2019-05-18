@@ -4,7 +4,7 @@ namespace lroman242\LaravelCassandra;
 
 use Cassandra;
 use Cassandra\BatchStatement;
-use lroman242\LaravelCassandra\Exceptions\NotSupportedException;
+use \lroman242\LaravelCassandra\Exceptions\CassandraNotSupportedException;
 
 class Connection extends \Illuminate\Database\Connection
 {
@@ -322,7 +322,7 @@ class Connection extends \Illuminate\Database\Connection
      */
     public function __call($method, $parameters)
     {
-        return call_user_func_array([$this->cluster, $method], $parameters);
+        return call_user_func_array([$this->session, $method], $parameters);
     }
 
     /**
@@ -359,7 +359,7 @@ class Connection extends \Illuminate\Database\Connection
      */
     public function transaction(\Closure $callback, $attempts = 1)
     {
-        throw new NotSupportedException("Transactions is not supported by Cassandra database");
+        throw new CassandraNotSupportedException("Transactions is not supported by Cassandra database");
     }
 
     /**
@@ -367,7 +367,7 @@ class Connection extends \Illuminate\Database\Connection
      */
     public function beginTransaction()
     {
-        throw new NotSupportedException("Transactions is not supported by Cassandra database");
+        throw new CassandraNotSupportedException("Transactions is not supported by Cassandra database");
     }
 
     /**
@@ -375,7 +375,7 @@ class Connection extends \Illuminate\Database\Connection
      */
     public function commit()
     {
-        throw new NotSupportedException("Transactions is not supported by Cassandra database");
+        throw new CassandraNotSupportedException("Transactions is not supported by Cassandra database");
     }
 
     /**
@@ -383,7 +383,7 @@ class Connection extends \Illuminate\Database\Connection
      */
     public function rollBack()
     {
-        throw new NotSupportedException("Transactions is not supported by Cassandra database");
+        throw new CassandraNotSupportedException("Transactions is not supported by Cassandra database");
     }
 
     /**
@@ -391,7 +391,7 @@ class Connection extends \Illuminate\Database\Connection
      */
     public function transactionLevel()
     {
-        throw new NotSupportedException("Transactions is not supported by Cassandra database");
+        throw new CassandraNotSupportedException("Transactions is not supported by Cassandra database");
     }
 
     //TODO: override isDoctrineAvailable method
