@@ -4,12 +4,13 @@ namespace lroman242\LaravelCassandra;
 
 use Cassandra;
 use Cassandra\BatchStatement;
+use Cassandra\Cluster\Builder as ClusterBuilder;
 use \lroman242\LaravelCassandra\Exceptions\CassandraNotSupportedException;
 
 class Connection extends \Illuminate\Database\Connection
 {
     const DEFAULT_PAGE_SIZE = 5000;
-    
+
     /**
      * The Cassandra keyspace
      *
@@ -41,7 +42,7 @@ class Connection extends \Illuminate\Database\Connection
     /**
      * Create a new database connection instance.
      *
-     * @param  array   $config
+     * @param array $config
      */
     public function __construct(array $config)
     {
@@ -51,7 +52,7 @@ class Connection extends \Illuminate\Database\Connection
         }
 
         // Create the connection
-        $this->cluster = $this->createCluster($config);
+        $this->cluster = $this->createCluster();
 
         if (isset($config['keyspace'])) {
             $keyspaceName = $config['keyspace'];
@@ -70,7 +71,7 @@ class Connection extends \Illuminate\Database\Connection
     /**
      * Begin a fluent query against a database table.
      *
-     * @param  string  $table
+     * @param string $table
      * @return Query\Builder
      */
     public function table($table)
@@ -113,59 +114,81 @@ class Connection extends \Illuminate\Database\Connection
     }
 
     /**
-     * Create a new Cassandra cluster object.
+     * Set username and password to cluster connection.
+     * Set cluster contact points (IP addresses)
+     * Set connection communication port
      *
-     * @param  array   $config
-     *
-     * @return \Cassandra\Cluster
+     * @param \Cassandra\Cluster\Builder $cluster
      */
-    protected function createCluster(array $config)
+    protected function setConnectionOptions(ClusterBuilder $cluster)
     {
-        $cluster = Cassandra::cluster();
-
         // Authentication
-        if (isset($config['username']) && isset($config['password'])) {
-            $cluster->withCredentials($config['username'], $config['password']);
+        if (isset($this->config['username']) && isset($this->config['password'])) {
+            $cluster->withCredentials($this->config['username'], $this->config['password']);
         }
 
-        // Contact Points/Host
-        if (!empty($config['host'])) {
-            $contactPoints = $config['host'];
+        if (!empty($this->config['host'])) {
+            $contactPoints = $this->config['host'];
 
             if (is_string($contactPoints)) {
                 $contactPoints = explode(',', $contactPoints);
             }
 
-            call_user_func_array([$cluster, 'withContactPoints'], (array) $contactPoints);
+            call_user_func_array([$cluster, 'withContactPoints'], (array)$contactPoints);
         }
 
-        if (!empty($config['port'])) {
-            $cluster->withPort((int) $config['port']);
+        if (!empty($this->config['port'])) {
+            $cluster->withPort((int)$this->config['port']);
         }
+    }
 
-        $cluster->withDefaultPageSize(intval(!empty($config['page_size']) ? $config['page_size'] : self::DEFAULT_PAGE_SIZE));
-
-        if (isset($config['consistency']) && in_array($config['consistency'], [
+    /**
+     * Set default consistency level
+     * Set default timeouts to queries
+     * Set default response size to queries
+     *
+     * @param \Cassandra\Cluster\Builder $cluster
+     */
+    protected function setDefaultQueryOptions(ClusterBuilder $cluster)
+    {
+        if (isset($this->config['consistency']) && in_array($this->config['consistency'], [
                 Cassandra::CONSISTENCY_ANY, Cassandra::CONSISTENCY_ONE, Cassandra::CONSISTENCY_TWO,
                 Cassandra::CONSISTENCY_THREE, Cassandra::CONSISTENCY_QUORUM, Cassandra::CONSISTENCY_ALL,
                 Cassandra::CONSISTENCY_SERIAL, Cassandra::CONSISTENCY_QUORUM, Cassandra::CONSISTENCY_LOCAL_QUORUM,
                 Cassandra::CONSISTENCY_EACH_QUORUM, Cassandra::CONSISTENCY_LOCAL_SERIAL, Cassandra::CONSISTENCY_LOCAL_ONE,
             ])) {
 
-            $cluster->withDefaultConsistency($config['consistency']);
+            $cluster->withDefaultConsistency($this->config['consistency']);
         }
 
-        if (!empty($config['timeout'])) {
-            $cluster->withDefaultTimeout(intval($config['timeout']));
+        if (!empty($this->config['timeout'])) {
+            $cluster->withDefaultTimeout(intval($this->config['timeout']));
         }
 
-        if (!empty($config['connect_timeout'])) {
-            $cluster->withConnectTimeout(floatval($config['connect_timeout']));
+        if (!empty($this->config['connect_timeout'])) {
+            $cluster->withConnectTimeout(floatval($this->config['connect_timeout']));
         }
 
-        if (!empty($config['request_timeout'])) {
-            $cluster->withRequestTimeout(floatval($config['request_timeout']));
+        if (!empty($this->config['request_timeout'])) {
+            $cluster->withRequestTimeout(floatval($this->config['request_timeout']));
         }
+
+        $cluster->withDefaultPageSize(intval(!empty($this->config['page_size']) ? $this->config['page_size'] : self::DEFAULT_PAGE_SIZE));
+    }
+
+    /**
+     * Create a new Cassandra cluster object.
+     *
+     * @return \Cassandra\Cluster
+     */
+    protected function createCluster()
+    {
+        $cluster = Cassandra::cluster();
+
+        // Authentication
+        $this->setConnectionOptions($cluster);
+
+        $this->setDefaultQueryOptions($cluster);
 
         return $cluster->build();
     }
@@ -309,7 +332,7 @@ class Connection extends \Illuminate\Database\Connection
     protected function reconnectIfMissingConnection()
     {
         if (is_null($this->session)) {
-            $this->session = $this->createCluster($this->config)->connect($this->keyspace);
+            $this->session = $this->createCluster()->connect($this->keyspace);
         }
     }
 
