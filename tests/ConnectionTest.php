@@ -273,7 +273,6 @@ class ConnectionTest extends TestCase
     //TODO: test batch unlogged
     //TODO: test batch with custom options
 
-
     /**
      * Test update function with query and bindings
      * expect to get number of affected rows equal 1
@@ -398,9 +397,84 @@ class ConnectionTest extends TestCase
         DB::connection('cassandra')->transactionLevel();
     }
 
+    /**
+     * Test Connection magic method __call
+     * should redirect request to \Cassandra\Session
+     */
     public function testConnectionMagicCall()
     {
         $rows = DB::connection('cassandra')->execute('SELECT * FROM testtable LIMIT 3');
         $this->assertEquals(3, $rows->count());
     }
+
+    /**
+     * Check if common statement returns correct
+     * failed value on pretending state
+     *
+     * @throws ReflectionException
+     */
+    public function testPretendingStatement()
+    {
+        $connection = DB::connection('cassandra');
+
+        $reflector = new ReflectionProperty($connection, 'pretending');
+        $reflector->setAccessible(true);
+        $reflector->setValue($connection, true);
+
+        $this->assertTrue($connection->pretending());
+
+        $result = $connection->select('SELECT * FROM testtable LIMIT :limit', ['limit' => 3]);
+
+        $this->assertTrue(is_array($result));
+        $this->assertEquals([], $result);
+    }
+
+    /**
+     * Check if affecting statement returns correct
+     * failed value on pretending state
+     *
+     * @throws ReflectionException
+     */
+    public function testPretendingAffectingStatement()
+    {
+        $connection = DB::connection('cassandra');
+
+        $reflector = new ReflectionProperty($connection, 'pretending');
+        $reflector->setAccessible(true);
+        $reflector->setValue($connection, true);
+
+        $this->assertTrue($connection->pretending());
+
+        $result = $connection->update('UPDATE testtable SET name = :name WHERE id = :id ', ['name' => __FUNCTION__, 'id' => 1]);
+
+        $this->assertEquals(0, $result);
+    }
+
+    /**
+     * Check if batch statement returns correct
+     * failed value on pretending state
+     *
+     * @throws ReflectionException
+     */
+    public function testPretendingBatchStatement()
+    {
+        $connection = DB::connection('cassandra');
+
+        $reflector = new ReflectionProperty($connection, 'pretending');
+        $reflector->setAccessible(true);
+        $reflector->setValue($connection, true);
+
+        $this->assertTrue($connection->pretending());
+
+        $queries = [];
+        $bindings = [];
+        for ($i = 11; $i <= 15; $i++) {
+            $queries[] = "INSERT INTO testtable (id, name) VALUES (:id, :name)";
+            $bindings[] = ['id' => $i, 'name' => 'value' . $i];
+        }
+
+        $result = $connection->insertBulk($queries, $bindings);
+        $this->assertTrue($result === []);
+    }
+
 }
