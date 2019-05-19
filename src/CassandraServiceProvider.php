@@ -23,7 +23,8 @@ class CassandraServiceProvider extends ServiceProvider
         $this->app->resolving('db', function ($db) {
             $db->extend('cassandra', function ($config, $name) {
                 $config['name'] = $name;
-                return new Connection($config);
+
+                return new Connection((new CassandraConnector)->connect($config), $config);
             });
         });
     }
