@@ -35,6 +35,7 @@ class TestCase extends Orchestra\Testbench\TestCase
         $app['config']->set('cache.driver', 'array');
 
         DB::connection('cassandra')->select('TRUNCATE testtable');
+        DB::connection('cassandra')->select('TRUNCATE testtable_popularity');
         for ($i = 1; $i <= 10; $i++) {
             DB::connection('cassandra')->select('INSERT INTO testtable (id, name) VALUES (?, ?)', [$i, "value$i"]);
         }

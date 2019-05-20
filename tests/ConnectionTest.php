@@ -222,9 +222,8 @@ class ConnectionTest extends TestCase
             $bindings[] = ['id' => $i, 'name' => 'value' . $i];
         }
 
-        /** @var \Cassandra\Rows $result */
-        $result = DB::connection('cassandra')->insertBulk($queries, $bindings);
-        $this->assertTrue(!$result[0]['[applied]']);
+        DB::connection('cassandra')->insertBulk($queries, $bindings);
+
         $rows = DB::connection('cassandra')->table('testtable')->get();
         $this->assertEquals(15, $rows->count());
     }
@@ -269,7 +268,28 @@ class ConnectionTest extends TestCase
         DB::connection('cassandra')->insertBulk($queries, $bindings, \Cassandra::BATCH_COUNTER);
     }
 
-    //TODO: test batch counter
+    /**
+     * Test batch statements for counter
+     * Use \Cassandra::BATCH_COUNTER type
+     */
+    public function testConnectionBatchStatementWithBatchCounter()
+    {
+        $queries = [];
+        $bindings = [];
+
+        for ($i = 0; $i < 3; $i++) {
+            $queries[] = "UPDATE testtable_popularity SET popularity = popularity + 1 WHERE name = :name";
+            $bindings[] = ['name' => 'value100500'];
+        }
+
+        DB::connection('cassandra')->insertBulk($queries, $bindings, \Cassandra::BATCH_COUNTER);
+
+        $row = DB::connection('cassandra')->select('SELECT * FROM testtable_popularity WHERE name = :name', ['name' => 'value100500']);
+        $this->assertInstanceOf(\Cassandra\Rows::class, $row);
+        $this->assertEquals(1, $row->count());
+        $this->assertTrue($row->first()['popularity'] >= 3);
+    }
+
     //TODO: test batch unlogged
     //TODO: test batch with custom options
 
