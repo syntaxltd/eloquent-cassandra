@@ -5,6 +5,8 @@ A Cassandra based Eloquent model and Query builder for Laravel (Casloquent)
 
 **WARNING**: This is a work in progress... not ready for usage yet.
 
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/badges/quality-score.png?b=testing)](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/?branch=testing)[![Code Coverage](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/badges/coverage.png?b=testing)](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/?branch=testing)[![Build Status](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/badges/build.png?b=testing)](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/build-status/testing)
+
 Installation
 ------------
 

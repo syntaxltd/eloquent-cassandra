@@ -11,11 +11,11 @@ class Builder extends EloquentBuilder
     /**
      * Create a collection of models from plain arrays.
      *
-     * @param  \Cassandra\Rows  $rows
+     * @param  \Cassandra\Rows|array  $rows
      *
      * @return Collection
      */
-    public function hydrateRows(Rows $rows)
+    public function hydrateRows($rows)
     {
         $instance = $this->newModelInstance();
 
@@ -52,7 +52,12 @@ class Builder extends EloquentBuilder
         $results = $this->query->getPage($columns);
 
         if ($results instanceof Collection) {
-            $results = $results->getRows();
+            $rows = $results->getRows();
+            if ($rows->isLastPage()) {
+                $results = $results->all();
+            } else {
+                $results = $rows;
+            }
         } elseif (!$results instanceof Rows) {
             throw new \Exception('Invalid type of getPage response. Expected lroman242\LaravelCassandra\Collection or Cassandra\Rows');
         }
@@ -90,7 +95,12 @@ class Builder extends EloquentBuilder
         $results = $this->query->get($columns);
 
         if ($results instanceof Collection) {
-            $results = $results->getRows();
+            $rows = $results->getRows();
+            if ($rows->isLastPage()) {
+                $results = $results->all();
+            } else {
+                $results = $rows;
+            }
         } elseif (!$results instanceof Rows) {
             throw new \Exception('Invalid type of getPage response. Expected lroman242\LaravelCassandra\Collection or Cassandra\Rows');
         }

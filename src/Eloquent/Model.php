@@ -13,6 +13,13 @@ use Illuminate\Support\Str;
 abstract class Model extends BaseModel
 {
     /**
+     * The connection name for the model.
+     *
+     * @var string
+     */
+    protected $connection = 'cassandra';
+
+    /**
      * Indicates if the IDs are auto-incrementing.
      * This is not possible in cassandra so we override this
      *
@@ -176,12 +183,18 @@ abstract class Model extends BaseModel
     /**
      * Create a new Eloquent Collection instance.
      *
-     * @param  Rows  $rows
+     * @param  Rows|array  $rows
      *
      * @return Collection
+     *
+     * @throws \Exception
      */
-    public function newCassandraCollection(Rows $rows)
+    public function newCassandraCollection($rows)
     {
+        if (!is_array($rows) && !$rows instanceof \Cassandra\Rows) {
+            throw new \Exception('Wrong type to create collection');//TODO: customize error
+        }
+
         return new Collection($rows, $this);
     }
 

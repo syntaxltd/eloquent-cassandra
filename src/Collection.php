@@ -47,7 +47,7 @@ class Collection extends BaseCollection
      */
     protected function prepareItems($items)
     {
-        if ($this->model !== null && $items instanceof Rows) {
+        if ($this->model !== null && ($items instanceof Rows || is_array($items))) {
             $models = [];
 
             foreach ($items as $row) {
@@ -76,6 +76,10 @@ class Collection extends BaseCollection
      */
     public function isLastPage()
     {
+        if ($this->rows === null) {
+            return true;
+        }
+
         return $this->rows->isLastPage();
     }
 
@@ -124,6 +128,7 @@ class Collection extends BaseCollection
      *
      * @param  mixed  $key
      * @param  mixed  $default
+     *
      * @return \Illuminate\Database\Eloquent\Model|static
      */
     public function find($key, $default = null)
