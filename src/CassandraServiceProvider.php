@@ -1,6 +1,6 @@
 <?php
 
-namespace fuitad\LaravelCassandra;
+namespace lroman242\LaravelCassandra;
 
 use Illuminate\Support\ServiceProvider;
 
@@ -23,7 +23,8 @@ class CassandraServiceProvider extends ServiceProvider
         $this->app->resolving('db', function ($db) {
             $db->extend('cassandra', function ($config, $name) {
                 $config['name'] = $name;
-                return new Connection($config);
+
+                return new Connection((new CassandraConnector)->connect($config), $config);
             });
         });
     }

@@ -1,27 +1,19 @@
 <?php
 
-namespace fuitad\LaravelCassandra;
+namespace lroman242\LaravelCassandra;
 
 use Cassandra;
 use Cassandra\BatchStatement;
+use \lroman242\LaravelCassandra\Exceptions\CassandraNotSupportedException;
 
 class Connection extends \Illuminate\Database\Connection
 {
-    const DEFAULT_PAGE_SIZE = 5000;
-    
     /**
      * The Cassandra keyspace
      *
      * @var string
      */
     protected $keyspace;
-
-    /**
-     * The Cassandra cluster
-     *
-     * @var \Cassandra\Cluster
-     */
-    protected $cluster;
 
     /**
      * The Cassandra connection handler.
@@ -31,27 +23,33 @@ class Connection extends \Illuminate\Database\Connection
     protected $session;
 
     /**
-     * Create a new database connection instance.
+     * The config
      *
-     * @param  array   $config
+     * @var array
      */
-    public function __construct(array $config)
+    protected $config;
+
+    /**
+     * The Cassandra cluster
+     *
+     * @var \Cassandra\Cluster
+     */
+    protected $cluster;
+
+    /**
+     * Connection constructor.
+     * @param Cassandra\Cluster $cluster
+     * @param array $config
+     */
+    public function __construct(\Cassandra\Cluster $cluster, array $config)
     {
         $this->config = $config;
-        if (empty($this->config['page_size'])) {
-            $this->config['page_size'] = self::DEFAULT_PAGE_SIZE;
-        }
-        
-        // You can pass options directly to the Cassandra constructor
-        $options = array_get($config, 'options', []);
 
-        // Create the connection
-        $this->cluster = $this->createCluster(null, $config, $options);
+        $this->cluster = $cluster;
 
-        if (isset($options['database']) || isset($config['database'])) {
-            $this->keyspace = $config['database'];
-            $this->session = $this->cluster->connect($config['database']);
-        }
+        $this->keyspace = $this->getDatabase($config);
+
+        $this->session = $this->cluster->connect($this->keyspace);
 
         $this->useDefaultPostProcessor();
 
@@ -61,9 +59,27 @@ class Connection extends \Illuminate\Database\Connection
     }
 
     /**
+     * Get keyspace name from config
+     *
+     * @param array $config
+     *
+     * @return string|null
+     */
+    protected function getDatabase(array $config)
+    {
+        $keyspaceName = null;
+
+        if (isset($config['keyspace'])) {
+            $keyspaceName = $config['keyspace'];
+        }
+
+        return $keyspaceName;
+    }
+
+    /**
      * Begin a fluent query against a database table.
      *
-     * @param  string  $table
+     * @param string $table
      * @return Query\Builder
      */
     public function table($table)
@@ -106,61 +122,12 @@ class Connection extends \Illuminate\Database\Connection
     }
 
     /**
-     * Create a new Cassandra cluster object.
-     *
-     * @param  string  $dsn
-     * @param  array   $config
-     * @param  array   $options
-     * @return \Cassandra\Cluster
-     */
-    protected function createCluster($dsn, array $config, array $options)
-    {
-        // By default driver options is an empty array.
-        $driverOptions = [];
-
-        if (isset($config['driver_options']) && is_array($config['driver_options'])) {
-            $driverOptions = $config['driver_options'];
-        }
-
-        $cluster = Cassandra::cluster();
-
-        // Check if the credentials are not already set in the options
-        if (!isset($options['username']) && !empty($config['username'])) {
-            $options['username'] = $config['username'];
-        }
-        if (!isset($options['password']) && !empty($config['password'])) {
-            $options['password'] = $config['password'];
-        }
-
-        // Authentication
-        if (isset($options['username']) && isset($options['password'])) {
-            $cluster->withCredentials($options['username'], $options['password']);
-        }
-
-        // Contact Points/Host
-        if (isset($options['contactpoints']) || (isset($config['host']) && !empty($config['host']))) {
-            $contactPoints = $config['host'];
-
-            if (isset($options['contactpoints'])) {
-                $contactPoints = $options['contactpoints'];
-            }
-
-            call_user_func_array([$cluster, 'withContactPoints'], $contactPoints);
-        }
-
-        if (!isset($options['port']) && !empty($config['port'])) {
-            $cluster->withPort((int) $config['port']);
-        }
-
-        return $cluster->build();
-    }
-
-    /**
      * Disconnect from the underlying Cassandra connection.
      */
     public function disconnect()
     {
-        unset($this->connection);
+        $this->session->close();
+        $this->session = null;
     }
 
     /**
@@ -179,19 +146,13 @@ class Connection extends \Illuminate\Database\Connection
      * @param  string  $query
      * @param  array  $bindings
      * @param  bool  $useReadPdo
-     * @return array
+     * @param  array  $customOptions
+     *
+     * @return mixed
      */
-    public function select($query, $bindings = [], $useReadPdo = true)
+    public function select($query, $bindings = [], $useReadPdo = true, array $customOptions = [])
     {
-        return $this->run($query, $bindings, function ($query, $bindings) use ($useReadPdo) {
-            if ($this->pretending()) {
-                return [];
-            }
-
-            $preparedStatement = $this->session->prepare($query);
-
-            return $this->session->execute($preparedStatement, ['arguments' => $bindings, 'page_size' => (int)$this->config['page_size']]);
-        });
+        return $this->statement($query, $bindings, $customOptions);
     }
 
     /**
@@ -199,11 +160,14 @@ class Connection extends \Illuminate\Database\Connection
      *
      * @param  array  $queries
      * @param  array  $bindings
+     * @param  int  $type
+     * @param  array  $customOptions
+     *
      * @return bool
      */
-    public function insertBulk($queries = [], $bindings = [], $type = Cassandra::BATCH_LOGGED)
+    public function insertBulk($queries = [], $bindings = [], $type = Cassandra::BATCH_LOGGED, array $customOptions = [])
     {
-        return $this->batchStatement($queries, $bindings, $type);
+        return $this->batchStatement($queries, $bindings, $type, $customOptions);
     }
 
     /**
@@ -211,44 +175,41 @@ class Connection extends \Illuminate\Database\Connection
      *
      * @param  array  $queries
      * @param  array  $bindings
+     * @param  int  $type
+     * @param  array  $customOptions
+     *
      * @return bool
      */
-    public function batchStatement($queries = [], $bindings = [], $type = Cassandra::BATCH_LOGGED)
+    public function batchStatement($queries = [], $bindings = [], $type = Cassandra::BATCH_LOGGED, array $customOptions = [])
     {
-        return $this->run($queries, $bindings, function ($queries, $bindings) {
+        return $this->run($queries, $bindings, function ($queries, $bindings) use ($type, $customOptions) {
             if ($this->pretending()) {
                 return [];
             }
 
-            $batch = new BatchStatement(Cassandra::BATCH_LOGGED);
+            $batch = new BatchStatement($type);
 
             foreach ($queries as $k => $query) {
                 $preparedStatement = $this->session->prepare($query);
                 $batch->add($preparedStatement, $bindings[$k]);
             }
 
-            return $this->session->execute($batch);
+            return $this->session->execute($batch, $customOptions);
         });
     }
 
     /**
-     * Execute an SQL statement and return the boolean result.
+     * Execute an CQL statement and return the boolean result.
      *
      * @param  string  $query
      * @param  array   $bindings
-     * @return bool
+     * @param  array  $customOptions
+     *
+     * @return mixed
      */
-    public function statement($query, $bindings = [])
+    public function statement($query, $bindings = [], array $customOptions = [])
     {
-        return $this->run($query, $bindings, function ($query, $bindings) {
-            if ($this->pretending()) {
-                return [];
-            }
-
-            $preparedStatement = $this->session->prepare($query);
-
-            return $this->session->execute($preparedStatement, ['arguments' => $bindings]);
-        });
+        return $this->runStatement($query, $bindings, $customOptions);
     }
 
     /**
@@ -258,21 +219,13 @@ class Connection extends \Illuminate\Database\Connection
      *
      * @param  string  $query
      * @param  array   $bindings
+     * @param  array  $customOptions
+     *
      * @return int
      */
-    public function affectingStatement($query, $bindings = [])
+    public function affectingStatement($query, $bindings = [], array $customOptions = [])
     {
-        return $this->run($query, $bindings, function ($query, $bindings) {
-            if ($this->pretending()) {
-                return 0;
-            }
-
-            $preparedStatement = $this->session->prepare($query);
-
-            $this->session->execute($preparedStatement, ['arguments' => $bindings]);
-
-            return 1;
-        });
+        return $this->runStatement($query, $bindings, $customOptions, 0, 1);
     }
 
     /**
@@ -300,6 +253,18 @@ class Connection extends \Illuminate\Database\Connection
     }
 
     /**
+     * Reconnect to the database if connection is missing.
+     *
+     * @return void
+     */
+    protected function reconnectIfMissingConnection()
+    {
+        if (is_null($this->session)) {
+            $this->session = $this->cluster->connect($this->keyspace);
+        }
+    }
+
+    /**
      * Dynamically pass methods to the connection.
      *
      * @param  string  $method
@@ -308,6 +273,98 @@ class Connection extends \Illuminate\Database\Connection
      */
     public function __call($method, $parameters)
     {
-        return call_user_func_array([$this->cluster, $method], $parameters);
+        return call_user_func_array([$this->session, $method], $parameters);
     }
+
+    /**
+     * Execute an CQL statement and return the boolean result.
+     *
+     * @param string $query
+     * @param array $bindings
+     * @param array $customOptions
+     * @param mixed $defaultFailed
+     * @param mixed $defaultSuccess
+     *
+     * @return mixed
+     */
+    protected function runStatement($query, $bindings = [], array $customOptions = [], $defaultFailed = [], $defaultSuccess = null)
+    {
+        return $this->run($query, $bindings, function ($query, $bindings) use ($customOptions, $defaultFailed, $defaultSuccess) {
+            if ($this->pretending()) {
+                return $defaultFailed;
+            }
+
+            $preparedStatement = $this->session->prepare($query);
+
+            //Add bindings
+            $customOptions['arguments'] = $bindings;
+
+            $result = $this->session->execute($preparedStatement, $customOptions);
+
+            return $defaultSuccess === null ? $result : $defaultSuccess;
+        });
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function transaction(\Closure $callback, $attempts = 1)
+    {
+        throw new CassandraNotSupportedException("Transactions is not supported by Cassandra database");
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function beginTransaction()
+    {
+        throw new CassandraNotSupportedException("Transactions is not supported by Cassandra database");
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function commit()
+    {
+        throw new CassandraNotSupportedException("Transactions is not supported by Cassandra database");
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function rollBack()
+    {
+        throw new CassandraNotSupportedException("Transactions is not supported by Cassandra database");
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function transactionLevel()
+    {
+        throw new CassandraNotSupportedException("Transactions is not supported by Cassandra database");
+    }
+
+    //TODO: override isDoctrineAvailable method
+    //TODO: override getDoctrineColumn method
+    //TODO: override getDoctrineSchemaManager method
+    //TODO: override getDoctrineConnection method
+    //TODO: override getPdo method
+    //TODO: override getReadPdo method
+    //TODO: override setPdo method
+    //TODO: override setReadPdo method
+    //TODO: override setReconnector method
+    //TODO: override reconnect method
+    //TODO: override query method
+
+    //TODO: override bindValues method
+    //TODO: override cursor method
+    //TODO: override unprepared method
+
+    //TODO: check prepareBindings method
+
+    //TODO: provide interface for $this->session->executeAsync
+    //TODO: provide interface for $this->session->prepareAsync
+    //TODO: provide interface for $this->session->closeAsync
+    //TODO: provide interface for $this->session->schema
 }

@@ -14,6 +14,12 @@ INSERT INTO unittest.testtable (id, name) VALUES (2,'bar');
 INSERT INTO unittest.testtable (id, name) VALUES (3,'moo');
 INSERT INTO unittest.testtable (id, name) VALUES (4,'cow');
 
+CREATE TABLE testtable_popularity (
+    name TEXT,
+    popularity counter,
+    PRIMARY KEY ((name))
+);
+
 CREATE TABLE users (
     id          INT,
     name        TEXT,

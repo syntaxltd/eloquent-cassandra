@@ -11,8 +11,7 @@ class TestCase extends Orchestra\Testbench\TestCase
     protected function getPackageProviders($app)
     {
         return [
-            fuitad\LaravelCassandra\CassandraServiceProvider::class,
-            //fuitad\LaravelCassandra\Auth\PasswordResetServiceProvider::class,
+            lroman242\LaravelCassandra\CassandraServiceProvider::class,
         ];
     }
 
@@ -24,7 +23,7 @@ class TestCase extends Orchestra\Testbench\TestCase
      */
     protected function getEnvironmentSetUp($app)
     {
-        $config = require 'config/database.php';
+        $config = require(__DIR__ . '/config/database.php');
 
         $app['config']->set('app.key', 'gi0BMtzVEdluo98rjx9aiFWjYtETsj8V');
 
@@ -34,5 +33,11 @@ class TestCase extends Orchestra\Testbench\TestCase
         $app['config']->set('auth.model', 'User');
         $app['config']->set('auth.providers.users.model', 'User');
         $app['config']->set('cache.driver', 'array');
+
+        DB::connection('cassandra')->select('TRUNCATE testtable');
+        DB::connection('cassandra')->select('TRUNCATE testtable_popularity');
+        for ($i = 1; $i <= 10; $i++) {
+            DB::connection('cassandra')->select('INSERT INTO testtable (id, name) VALUES (?, ?)', [$i, "value$i"]);
+        }
     }
 }
