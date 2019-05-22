@@ -113,7 +113,7 @@ class CollectionTest extends TestCase
         }
     }
 
-    public function testPageFindInCollection()
+    public function testPageFindInCollectionByKeyValue()
     {
         $result = User::setPageSize(5)->getPage();
         $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $result);
@@ -122,7 +122,7 @@ class CollectionTest extends TestCase
         $this->assertTrue($searchResults->id == 10);
     }
 
-    public function testFindInCollection()
+    public function testFindInCollectionByKeyValue()
     {
         $result = User::get();
         $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $result);
@@ -130,5 +130,93 @@ class CollectionTest extends TestCase
         $searchResults = $result->find(10);
         $this->assertTrue($searchResults->id == 10);
 
+    }
+
+    public function testFindInCollectionByModel()
+    {
+        $result = User::get();
+        $user = User::first();
+
+        $searchResults = $result->find($user);
+
+        $this->assertEquals($searchResults, $user);
+    }
+
+    public function testFindInCollectionByEmptyArrayable()
+    {
+        $searchValues = collect([]);
+        $result = User::get();
+        $searchResults = $result->find($searchValues);
+
+        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $searchResults);
+        $this->assertEquals(0, $searchResults->count());
+    }
+
+    public function testFindInCollectionByArrayable()
+    {
+        $searchValues = collect([1,2,3,4,5]);
+        $result = User::get();
+        $searchResults = $result->find($searchValues);
+
+        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $searchResults);
+        $this->assertEquals(5, $searchResults->count());
+        foreach ($searchResults as $item) {
+            $this->assertTrue($searchValues->contains($item->id));
+        }
+    }
+
+    public function testFindInEmptyCollectionByArrayable()
+    {
+        $searchValues = collect([1,2,3,4,5]);
+        $result = User::where('id', '>', 40)->allowFiltering(true)->get();
+        $searchResults = $result->find($searchValues);
+
+        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $searchResults);
+        $this->assertEquals(0, $searchResults->count());
+    }
+
+    public function testPageGetRows()
+    {
+        $result = User::setPageSize(5)->getPage();
+        $rows = $result->getRows();
+
+        $this->assertInstanceOf(\Cassandra\Rows::class, $rows);
+        $this->assertEquals($rows->count(), $result->count());
+    }
+
+    public function testAllPagesGetRows()
+    {
+        $result = User::get();
+        $rows = $result->getRows();
+
+        $this->assertNull($rows);
+    }
+
+    public function testCollectionGetDictionary()
+    {
+        $results = User::get();
+        $dictionary = $results->getDictionary();
+
+        $this->assertTrue(is_array($dictionary));
+        $this->assertEquals(count($dictionary), $results->count());
+
+        foreach ($dictionary as $key => $value) {
+            $this->assertEquals($results->find($key), $value);
+        }
+    }
+
+    public function testCollectionExcept()
+    {
+        $results = User::get();
+
+        $exceptKeys = [1,2];
+        $exceptResults = $results->except($exceptKeys);
+
+        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $exceptResults);
+        $this->assertEquals($exceptResults->count(), ($results->count() - count($exceptKeys)));
+
+        foreach ($exceptResults as $value) {
+            $this->assertFalse(in_array($value->getKey(), $exceptKeys));
+        }
     }
 }
