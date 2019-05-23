@@ -7,6 +7,8 @@ class CollectionTest extends TestCase
     {
         parent::getEnvironmentSetUp($app);
 
+        \Illuminate\Support\Facades\DB::connection('cassandra')->select('TRUNCATE users');
+
         $faker = Faker\Factory::create();
         for($i = 1; $i <= 20; $i++) {
             \Illuminate\Support\Facades\DB::connection('cassandra')
@@ -218,5 +220,83 @@ class CollectionTest extends TestCase
         foreach ($exceptResults as $value) {
             $this->assertFalse(in_array($value->getKey(), $exceptKeys));
         }
+    }
+
+    public function testCollectionOnly()
+    {
+        $results = User::get();
+
+        $onlyKeys = [1, 2];
+
+        $onlyResults = $results->only($onlyKeys);
+        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $onlyResults);
+        $this->assertEquals($onlyResults->count(), count($onlyKeys));
+
+        foreach ($onlyResults as $value) {
+            $this->assertTrue(in_array($value->getKey(), $onlyKeys));
+        }
+    }
+
+    public function testCollectionOnlyNullArgument()
+    {
+        $results = User::get();
+
+        $onlyResults = $results->only(null);
+
+        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $onlyResults);
+        $this->assertEquals($onlyResults->count(), $results->count());
+
+        foreach ($onlyResults as $value) {
+            $this->assertTrue($results->contains($value));
+        }
+    }
+
+    public function testUniqueDuplicate()
+    {
+        $results = User::get();
+        $duplicate = User::first();
+
+        $originCount = $results->count();
+        $resultsWithDuplicate = $results->push($duplicate);
+
+        $this->assertEquals($resultsWithDuplicate->count(), $originCount + 1);
+
+        $uniqueResults = $resultsWithDuplicate->unique('name');
+
+        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $uniqueResults);
+        $this->assertEquals($uniqueResults->count(), $originCount);
+    }
+
+    public function testCollectionUniqe()
+    {
+        User::create([
+            'id' => 101,
+            'name' => 'Tester',
+            'title' => 'Mr.',
+            'age' => rand(18, 40),
+            'note1' => '',
+            'note2' => '',
+            'birthday' => new \Cassandra\Timestamp(time()),
+            'created_at' => new \Cassandra\Timestamp(time()),
+            'updated_at' => new \Cassandra\Timestamp(time()),
+        ]);
+        User::create([
+            'id' => 102,
+            'name' => 'Tester',
+            'title' => 'Mr.',
+            'age' => rand(18, 40),
+            'note1' => '',
+            'note2' => '',
+            'birthday' => new \Cassandra\Timestamp(time()),
+            'created_at' => new \Cassandra\Timestamp(time()),
+            'updated_at' => new \Cassandra\Timestamp(time()),
+        ]);
+
+        $results = User::where('id', '>', 15)->allowFiltering(true)->get();
+        $this->assertEquals(7, $results->count());
+
+        $uniqueResults = $results->unique('name');
+        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $uniqueResults);
+        $this->assertEquals($uniqueResults->count(), $results->count() - 1);
     }
 }

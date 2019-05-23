@@ -51,7 +51,11 @@ class Collection extends BaseCollection
             $models = [];
 
             foreach ($items as $row) {
-                $models[] = $this->model->newFromBuilder($row);
+                if (!$row instanceof $this->model) {
+                    $models[] = $this->model->newFromBuilder($row);
+                } else {
+                    $models[] = $row;
+                }
             }
 
             return $models;
