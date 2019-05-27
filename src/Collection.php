@@ -190,14 +190,16 @@ class Collection extends BaseCollection
         $model = $this->first();
 
         $freshModels = $model->newQueryWithoutScopes()
-            ->with(is_string($with) ? func_get_args() : $with)
             ->whereIn($model->getKeyName(), $this->modelKeys())
             ->get()
             ->getDictionary();
 
         return $this->map(function ($model) use ($freshModels) {
-            return $model->exists && isset($freshModels[(string) $model->getKey()])
-                ? $freshModels[(string) $model->getKey()] : null;
+            if ($model->exists && isset($freshModels[(string) $model->getKey()])) {
+                return $freshModels[(string) $model->getKey()];
+            } else {
+                return null;
+            }
         });
     }
 

@@ -267,7 +267,7 @@ class CollectionTest extends TestCase
         $this->assertEquals($uniqueResults->count(), $originCount);
     }
 
-    public function testCollectionUniqe()
+    public function testCollectionUnique()
     {
         User::create([
             'id' => 101,
@@ -298,5 +298,171 @@ class CollectionTest extends TestCase
         $uniqueResults = $results->unique('name');
         $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $uniqueResults);
         $this->assertEquals($uniqueResults->count(), $results->count() - 1);
+    }
+
+    public function testCollectionUniqueWithEmptyKey()
+    {
+        $results = User::where('id', '>', 15)
+            ->allowFiltering(true)
+            ->get();
+
+        $this->assertEquals(5, $results->count());
+
+        $first = $results->first();
+        $results = $results->push($first);
+        $results = $results->push($first);
+
+        $this->assertEquals(7, $results->count());
+
+        $uniqueResults = $results->unique();
+
+        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $uniqueResults);
+        $this->assertEquals(5, $uniqueResults->count());
+    }
+
+    public function testCollectionMerge()
+    {
+        /** @var \lroman242\LaravelCassandra\Collection $results */
+        $results = User::setPageSize(5)->getPage();
+        $this->assertEquals(5, $results->count());
+
+        $additionalResults = $results->nextPage();
+        $this->assertEquals(5, $additionalResults->count());
+
+        $mergeResults = $results->merge($additionalResults);
+        $this->assertEquals(10, $mergeResults->count());
+
+        foreach ($mergeResults as $item) {
+            $this->assertTrue($results->contains($item) || $additionalResults->contains($item));
+        }
+    }
+
+    public function testCollectionMergeWithDuplicates()
+    {
+        /** @var \lroman242\LaravelCassandra\Collection $results */
+        $results = User::setPageSize(5)->getPage();
+        $this->assertEquals(5, $results->count());
+
+        /** @var \lroman242\LaravelCassandra\Collection $additionalResults */
+        $additionalResults = User::setPageSize(7)->getPage();
+        $this->assertEquals(7, $additionalResults->count());
+
+        $mergeResults = $results->merge($additionalResults);
+        $this->assertEquals(7, $mergeResults->count());
+
+        foreach ($mergeResults as $item) {
+            $this->assertTrue($results->contains($item) || $additionalResults->contains($item));
+        }
+    }
+
+    public function testCollectionIntersect()
+    {
+        /** @var \lroman242\LaravelCassandra\Collection $results */
+        $results = User::setPageSize(5)->getPage();
+        $this->assertEquals(5, $results->count());
+
+        /** @var \lroman242\LaravelCassandra\Collection $additionalResults */
+        $additionalResults = User::setPageSize(7)->getPage();
+        $this->assertEquals(7, $additionalResults->count());
+
+        $intersectResults = $results->intersect($additionalResults);
+        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $intersectResults);
+        $this->assertEquals(5, $intersectResults->count());
+
+        foreach ($intersectResults as $item) {
+            $this->assertTrue($results->contains($item));
+        }
+    }
+
+    public function testCollectionDiff()
+    {
+        /** @var \lroman242\LaravelCassandra\Collection $results */
+        $results = User::setPageSize(5)->getPage();
+        $this->assertEquals(5, $results->count());
+
+        /** @var \lroman242\LaravelCassandra\Collection $additionalResults */
+        $additionalResults = User::setPageSize(7)->getPage();
+        $this->assertEquals(7, $additionalResults->count());
+
+        $diffResults = $results->diff($additionalResults);
+        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $diffResults);
+        $this->assertEquals(0, $diffResults->count());
+
+        $diffResults = $additionalResults->diff($results);
+        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $diffResults);
+        $this->assertEquals(2, $diffResults->count());
+
+        foreach ($diffResults as $item) {
+            $this->assertTrue($additionalResults->contains($item) && !$results->contains($item));
+        }
+    }
+
+    public function testCollectionFresh()
+    {
+        /** @var \lroman242\LaravelCassandra\Collection $results */
+        $results = User::setPageSize(5)->getPage();
+        $this->assertEquals(5, $results->count());
+
+        $fresh = $results->fresh();
+        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $fresh);
+        $this->assertEquals(5, $fresh->count());
+
+        foreach ($fresh as $item) {
+            $this->assertInstanceOf(User::class, $item);
+        }
+    }
+
+    public function testCollectionFreshWithoutDeleted()
+    {
+        /** @var \lroman242\LaravelCassandra\Collection $results */
+        $results = User::setPageSize(5)->getPage();
+        $this->assertEquals(5, $results->count());
+
+        $results->first()->delete();
+
+        $fresh = $results->fresh();
+//        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $fresh);
+        $this->assertEquals(5, $fresh->count());
+
+        $notEmptyResults = $fresh->filter(function ($item) {
+            return $item !== null;
+        });
+        $this->assertEquals(4, $notEmptyResults->count());
+
+        $emptyResults = $fresh->filter(function ($item) {
+            return $item === null;
+        });
+        $this->assertEquals(1, $emptyResults->count());
+    }
+
+    public function testCollectionFreshForEmptyCollection()
+    {
+        $collection = new \lroman242\LaravelCassandra\Collection();
+        $this->assertEquals(0, $collection->count());
+
+        $fresh = $collection->fresh();
+        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $fresh);
+        $this->assertEquals(0, $fresh->count());
+    }
+
+    public function testCollectionFreshWithFakeModels()
+    {
+        $users = [];
+        for ($i = 1; $i <= 3; $i++) {
+            $user = new User();
+            $user->id = $i;
+            $users[] = $user;
+        }
+
+        $collection = new \lroman242\LaravelCassandra\Collection($users, reset($users));
+        $this->assertEquals(3, $collection->count());
+
+        $fresh = $collection->fresh();
+//        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $fresh);
+        $this->assertEquals(3, $fresh->count());
+
+        foreach ($fresh->all() as $user) {
+            $this->assertNull($user);
+        }
     }
 }
