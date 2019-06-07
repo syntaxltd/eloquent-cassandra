@@ -65,3 +65,5 @@ CREATE TABLE items (
     updated_at  TIMESTAMP,
     PRIMARY KEY ((id), name));
 
+CREATE TYPE address (street text, city text, zip int);
+CREATE TYPE addresses (home frozen<address>, work frozen<address>);

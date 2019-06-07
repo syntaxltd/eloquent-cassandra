@@ -5,13 +5,15 @@ namespace lroman242\LaravelCassandra\Eloquent;
 use Carbon\Carbon;
 use Cassandra\Rows;
 use Cassandra\Timestamp;
+use lroman242\LaravelCassandra\CassandraTypesTrait;
 use lroman242\LaravelCassandra\Collection;
 use lroman242\LaravelCassandra\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\Model as BaseModel;
-use Illuminate\Support\Str;
 
 abstract class Model extends BaseModel
 {
+    use CassandraTypesTrait;
+
     /**
      * The connection name for the model.
      *
@@ -85,25 +87,6 @@ abstract class Model extends BaseModel
     }
 
     /**
-     * @inheritdoc
-     */
-    protected function originalIsNumericallyEquivalent($key)
-    {
-        $current = $this->attributes[$key];
-        $original = $this->original[$key];
-
-        // Date comparison.
-        if (in_array($key, $this->getDates())) {
-            $current = $current instanceof Timestamp ? $this->asDateTime($current) : $current;
-            $original = $original instanceof Timestamp ? $this->asDateTime($original) : $original;
-
-            return $current == $original;
-        }
-
-        return parent::originalIsNumericallyEquivalent($key);
-    }
-
-    /**
      * Get the table qualified key name.
      * Cassandra does not support the table.column annotation so
      * we override this
@@ -126,47 +109,6 @@ abstract class Model extends BaseModel
         return $column;
     }
 
-     /**
-     * Set a given attribute on the model.
-     *
-     * @param  string  $key
-     * @param  mixed  $value
-     * @return $this
-     */
-    public function setAttribute($key, $value)
-    {
-        // First we will check for the presence of a mutator for the set operation
-        // which simply lets the developers tweak the attribute as it is set on
-        // the model, such as "json_encoding" an listing of data for storage.
-        if ($this->hasSetMutator($key)) {
-            $method = 'set' . Str::studly($key) . 'Attribute';
-
-            return $this->{$method}($value);
-        }
-
-        // If an attribute is listed as a "date", we'll convert it from a DateTime
-        // instance into a form proper for storage on the database tables using
-        // the connection grammar's date format. We will auto set the values.
-        elseif ($value !== null && $this->isDateAttribute($key)) {
-            $value = $this->fromDateTime($value);
-        }
-
-        if ($this->isJsonCastable($key) && !is_null($value)) {
-            $value = $this->castAttributeAsJson($key, $value);
-        }
-
-        // If this attribute contains a JSON ->, we'll set the proper value in the
-        // attribute's underlying array. This takes care of properly nesting an
-        // attribute in the array's value in the case of deeply nested items.
-        if (Str::contains($key, '->')) {
-            return $this->fillJsonAttribute($key, $value);
-        }
-
-        $this->attributes[$key] = $value;
-
-        return $this;
-    }
-    
     /**
      * @inheritdoc
      */
@@ -234,89 +176,13 @@ abstract class Model extends BaseModel
         } elseif ($this->hasCast($key)) {
             return $this->castAttribute($key, $current) ===
                 $this->castAttribute($key, $original);
-        } elseif ($this->isCassandraObject($current)) {
+        } elseif ($this->isCassandraValueObject($current)) {
             return $this->valueFromCassandraObject($current) ===
                 $this->valueFromCassandraObject($original);
         }
 
         return is_numeric($current) && is_numeric($original)
             && strcmp((string) $current, (string) $original) === 0;
-    }
-
-    /**
-     * Check if object is instance of any cassandra object types
-     *
-     * @param $obj
-     * @return bool
-     */
-    protected function isCassandraObject($obj)
-    {
-        if ($obj instanceof \Cassandra\Uuid ||
-            $obj instanceof \Cassandra\Date ||
-            $obj instanceof \Cassandra\Float ||
-            $obj instanceof \Cassandra\Decimal ||
-            $obj instanceof \Cassandra\Timestamp ||
-            $obj instanceof \Cassandra\Inet ||
-            $obj instanceof \Cassandra\Time
-        ) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Check if object is instance of any cassandra object types
-     *
-     * @param $obj
-     * @return bool
-     */
-    protected function isCompareableCassandraObject($obj)
-    {
-        if ($obj instanceof \Cassandra\Uuid ||
-            $obj instanceof \Cassandra\Inet
-        ) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Returns comparable value from cassandra object type
-     *
-     * @param $obj
-     * @return mixed
-     */
-    protected function valueFromCassandraObject($obj)
-    {
-        $class = get_class($obj);
-        $value = '';
-        switch ($class) {
-            case 'Cassandra\Date':
-                $value = $obj->seconds();
-                break;
-            case 'Cassandra\Time':
-                $value = $obj->__toString();
-                break;
-            case 'Cassandra\Timestamp':
-                $value = $obj->time();
-                break;
-            case 'Cassandra\Float':
-                $value = $obj->value();
-                break;
-            case 'Cassandra\Decimal':
-                $value = $obj->value();
-                break;
-            case 'Cassandra\Inet':
-                $value = $obj->address();
-                break;
-            case 'Cassandra\Uuid':
-                $value = $obj->uuid();
-                break;
-        }
-
-        return $value;
     }
 
     /**
@@ -327,7 +193,8 @@ abstract class Model extends BaseModel
     public function getKey()
     {
         $value = $this->getAttribute($this->getKeyName());
-        if ($this->isCassandraObject($value)) {
+
+        if ($this->isCassandraValueObject($value)) {
             return $this->valueFromCassandraObject($this->getAttribute($this->getKeyName()));
         }
 
