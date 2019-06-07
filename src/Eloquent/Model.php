@@ -195,7 +195,18 @@ abstract class Model extends BaseModel
             throw new \Exception('Wrong type to create collection');//TODO: customize error
         }
 
-        return new Collection($rows, $this);
+        $items = [];
+        foreach ($rows as $row) {
+            $items[] = $this->newFromBuilder($row);
+        }
+
+        $collection = new Collection($items);
+
+        if ($rows instanceof \Cassandra\Rows) {
+            $collection->setRowsInstance($rows);
+        }
+
+        return $collection;
     }
 
     /**

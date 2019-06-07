@@ -123,16 +123,21 @@ class Builder extends BaseBuilder
         }
 
         // Process select with custom options
+        /** @var \Cassandra\Rows $results */
         $results = $this->processor->processSelect($this, $this->runSelect($options));
 
         // Get results from all pages
         $collection = new Collection($results);
 
         if ($this->fetchAllResults) {
-            while (!$collection->isLastPage()) {
-                $collection = $collection->appendNextPage();
+            while (!$results->isLastPage()) {
+                $results = $results->nextPage();
+                foreach ($results as $row) {
+                    $collection->push($row);
+                }
             }
         }
+        $collection->setRowsInstance($results);
 
         $this->columns = $original;
 
