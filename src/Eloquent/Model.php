@@ -191,11 +191,22 @@ abstract class Model extends BaseModel
      */
     public function newCassandraCollection($rows)
     {
-        if (!is_array($rows) && !$rows instanceof \Cassandra\Rows) {
+        if (!is_array($rows) && !$rows instanceof Rows) {
             throw new \Exception('Wrong type to create collection');//TODO: customize error
         }
 
-        return new Collection($rows, $this);
+        $items = [];
+        foreach ($rows as $row) {
+            $items[] = $this->newFromBuilder($row);
+        }
+
+        $collection = new Collection($items);
+
+        if ($rows instanceof Rows) {
+            $collection->setRowsInstance($rows);
+        }
+
+        return $collection;
     }
 
     /**
@@ -303,6 +314,21 @@ abstract class Model extends BaseModel
             case 'Cassandra\Uuid':
                 $value = $obj->uuid();
                 break;
+        }
+
+        return $value;
+    }
+
+    /**
+     * Get the value of the model's primary key.
+     *
+     * @return mixed
+     */
+    public function getKey()
+    {
+        $value = $this->getAttribute($this->getKeyName());
+        if ($this->isCassandraObject($value)) {
+            return $this->valueFromCassandraObject($this->getAttribute($this->getKeyName()));
         }
 
         return $value;

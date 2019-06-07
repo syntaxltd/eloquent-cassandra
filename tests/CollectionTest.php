@@ -77,7 +77,8 @@ class CollectionTest extends TestCase
         $this->assertTrue($nextPageResults->isLastPage());
 
         $nextPageResults2 = $nextPageResults->nextPage();
-        $this->assertNull($nextPageResults2);
+        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $nextPageResults2);
+        $this->assertTrue($nextPageResults2->isEmpty());
     }
 
     public function testGetNextPageToken()
@@ -464,5 +465,49 @@ class CollectionTest extends TestCase
         foreach ($fresh->all() as $user) {
             $this->assertNull($user);
         }
+    }
+
+    public function testCollectionGetRowFromCollectionWithoutRows()
+    {
+        $results = User::setPageSize(5)->getPage();
+        $collection = new \lroman242\LaravelCassandra\Collection($results->values()->all());
+
+        $this->assertNull($collection->getRows());
+    }
+
+    public function testCollectionGetNextPageTokenFromCollectionWithoutRows()
+    {
+        $results = User::setPageSize(5)->getPage();
+        $collection = new \lroman242\LaravelCassandra\Collection($results->values()->all());
+
+        $this->assertNull($collection->getNextPageToken());
+    }
+
+    public function testCollectionNextPageTokenFromCollectionWithoutRows()
+    {
+        $results = User::setPageSize(5)->getPage();
+        $collection = new \lroman242\LaravelCassandra\Collection($results->values()->all());
+
+        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $collection->nextPage());
+        $this->assertTrue($collection->nextPage()->isEmpty());
+    }
+
+    public function testCollectionAppendNextPageFromCollectionWithoutRows()
+    {
+        $results = User::setPageSize(5)->getPage();
+        $collection = new \lroman242\LaravelCassandra\Collection($results->values()->all());
+
+        $this->assertEquals(5, $collection->count());
+        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $collection->appendNextPage());
+        $this->assertEquals(5, $collection->count());
+    }
+
+    public function testCollectionAppendNextPage()
+    {
+        $results = User::setPageSize(5)->getPage();
+
+        $this->assertEquals(5, $results->count());
+        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $results->appendNextPage());
+        $this->assertEquals(10, $results->count());
     }
 }

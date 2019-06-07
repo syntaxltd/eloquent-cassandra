@@ -1,0 +1,2 @@
+07-06-2019 06:55:11 UTC [ERROR] Unable to establish a control connection to host 127.0.0.1 because of the following error: Underlying connection error: Connect error 'connection refused' (src/cluster_connector.cpp:238)
+07-06-2019 06:57:39 UTC [ERROR] Unable to establish a control connection to host 127.0.0.1 because of the following error: Underlying connection error: Connect error 'connection refused' (src/cluster_connector.cpp:238)

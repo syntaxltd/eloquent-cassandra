@@ -4,8 +4,6 @@ namespace lroman242\LaravelCassandra;
 
 use \Cassandra\Rows;
 use lroman242\LaravelCassandra\Eloquent\Model;
-use Illuminate\Support\Arr;
-use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Collection as BaseCollection;
 
 class Collection extends BaseCollection
@@ -18,50 +16,20 @@ class Collection extends BaseCollection
     private $rows;
 
     /**
-     * Items model
+     * Set Cassandra rows instance related to the
+     * collection items.
      *
-     * @var Model
-     */
-    private $model;
-
-    /**
-     * Create a new collection.
+     * Required for fetching next pages
      *
-     * @param  mixed  $items
-     * @param  Model  $model
+     * @param Rows $rows
+     *
+     * @return $this
      */
-    public function __construct($items = [], Model $model = null)
+    public function setRowsInstance(Rows $rows)
     {
-        if ($items instanceof Rows) {
-            $this->rows = $items;
-        }
-        $this->model = $model;
+        $this->rows = $rows;
 
-        parent::__construct($this->prepareItems($items));
-    }
-
-    /**
-     * Prepare items for collection
-     *
-     * @return array|Model[]
-     */
-    protected function prepareItems($items)
-    {
-        if ($this->model !== null && ($items instanceof Rows || is_array($items))) {
-            $models = [];
-
-            foreach ($items as $row) {
-                if (!$row instanceof $this->model) {
-                    $models[] = $this->model->newFromBuilder($row);
-                } else {
-                    $models[] = $row;
-                }
-            }
-
-            return $models;
-        } else {
-            return $items;
-        }
+        return $this;
     }
 
     /**
@@ -71,6 +39,10 @@ class Collection extends BaseCollection
      */
     public function getNextPageToken()
     {
+        if ($this->rows === null) {
+            return null;
+        }
+
         return $this->rows->pagingStateToken();
     }
 
@@ -94,9 +66,17 @@ class Collection extends BaseCollection
      */
     public function nextPage()
     {
-        if (!$this->isLastPage()) {
-            return new self($this->rows->nextPage(), $this->model);
+        if ($this->rows !== null && !$this->isLastPage()) {
+            /** @var Model $instance */
+            $model = $this->first();
+
+            $nextPageRows = $this->rows->nextPage();
+            $nextPageCollection = $model->newCassandraCollection($nextPageRows);
+
+            return $nextPageCollection;
         }
+
+        return new self;
     }
 
     /**
@@ -119,43 +99,12 @@ class Collection extends BaseCollection
     {
         $nextPage = $this->nextPage();
 
-        if ($nextPage) {
+        if (!$nextPage->isEmpty()) {
             $this->items = array_merge($this->items, $nextPage->toArray());
             $this->rows = $nextPage->getRows();
         }
 
         return $this;
-    }
-
-    /**
-     * Find a model in the collection by key.
-     *
-     * @param  mixed  $key
-     * @param  mixed  $default
-     *
-     * @return \Illuminate\Database\Eloquent\Model|static
-     */
-    public function find($key, $default = null)
-    {
-        if ($key instanceof Model) {
-            $key = $key->getKey();
-        }
-
-        if ($key instanceof Arrayable) {
-            $key = $key->toArray();
-        }
-
-        if (is_array($key)) {
-            if ($this->isEmpty()) {
-                return new static([], $this->model);
-            }
-
-            return $this->whereIn($this->first()->getKeyName(), $key);
-        }
-
-        return Arr::first($this->items, function ($model) use ($key) {
-            return $model->getKey() == $key;
-        }, $default);
     }
 
     /**
@@ -172,7 +121,7 @@ class Collection extends BaseCollection
             $dictionary[(string) $item->getKey()] = $item;
         }
 
-        return new static(array_values($dictionary), $this->model);
+        return new static(array_values($dictionary));
     }
 
     /**
@@ -184,7 +133,7 @@ class Collection extends BaseCollection
     public function fresh($with = [])
     {
         if ($this->isEmpty()) {
-            return new static([], $this->model);
+            return new static([]);
         }
 
         $model = $this->first();
@@ -195,119 +144,11 @@ class Collection extends BaseCollection
             ->getDictionary();
 
         return $this->map(function ($model) use ($freshModels) {
-            if ($model->exists && isset($freshModels[(string) $model->getKey()])) {
-                return $freshModels[(string) $model->getKey()];
+            if ($model->exists && isset($freshModels[$model->getKey()])) {
+                return $freshModels[$model->getKey()];
             } else {
                 return null;
             }
         });
-    }
-
-    /**
-     * Diff the collection with the given items.
-     *
-     * @param  \ArrayAccess|array  $items
-     * @return static
-     */
-    public function diff($items)
-    {
-        $diff = new static([], $this->model);
-
-        $dictionary = $this->getDictionary($items);
-
-        foreach ($this->items as $item) {
-            if (!isset($dictionary[(string) $item->getKey()])) {
-                $diff->add($item);
-            }
-        }
-
-        return $diff;
-    }
-
-    /**
-     * Intersect the collection with the given items.
-     *
-     * @param  \ArrayAccess|array  $items
-     * @return static
-     */
-    public function intersect($items)
-    {
-        $intersect = new static([], $this->model);
-
-        $dictionary = $this->getDictionary($items);
-
-        foreach ($this->items as $item) {
-            if (isset($dictionary[(string) $item->getKey()])) {
-                $intersect->add($item);
-            }
-        }
-
-        return $intersect;
-    }
-
-    /**
-     * Return only unique items from the collection.
-     *
-     * @param  string|callable|null  $key
-     * @param  bool  $strict
-     * @return static|\Illuminate\Support\Collection
-     */
-    public function unique($key = null, $strict = false)
-    {
-        if (!is_null($key)) {
-            return parent::unique($key, $strict);
-        }
-
-        return new static(array_values($this->getDictionary()), $this->model);
-    }
-
-    /**
-     * Returns only the models from the collection with the specified keys.
-     *
-     * @param  mixed  $keys
-     * @return static
-     */
-    public function only($keys)
-    {
-        if (is_null($keys)) {
-            return new static($this->items, $this->model);
-        }
-
-        $dictionary = Arr::only($this->getDictionary(), $keys);
-
-        return new static(array_values($dictionary), $this->model);
-    }
-
-    /**
-     * Returns all models in the collection except the models with specified keys.
-     *
-     * @param  mixed  $keys
-     * @return static
-     */
-    public function except($keys)
-    {
-        $dictionary = Arr::except($this->getDictionary(), $keys);
-
-        return new static(array_values($dictionary), $this->model);
-    }
-
-
-    /**
-     * Get a dictionary keyed by primary keys.
-     *
-     * @param  \ArrayAccess|array|null  $items
-     * @return array
-     */
-    public function getDictionary($items = null)
-    {
-        $items = is_null($items) ? $this->items : $items;
-
-        $dictionary = [];
-
-        foreach ($items as $value) {
-            $dictionary[(string) $value->getKey()] = $value;
-        }
-
-        return $dictionary;
     }
 }
