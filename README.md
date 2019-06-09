@@ -3,9 +3,9 @@ Laravel Cassandra
 
 A Cassandra based Eloquent model and Query builder for Laravel (Casloquent)
 
-**WARNING**: This is a work in progress... not ready for usage yet.
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/?branch=master)[![Code Coverage](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/?branch=master)[![Build Status](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/badges/build.png?b=master)](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/build-status/master)
 
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/badges/quality-score.png?b=testing)](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/?branch=testing)[![Code Coverage](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/badges/coverage.png?b=testing)](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/?branch=testing)[![Build Status](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/badges/build.png?b=testing)](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/build-status/testing)
+**Real test coverage is much lower**
 
 Installation
 ------------
@@ -14,7 +14,7 @@ Installation
 
  Laravel  | Package
 :---------|:----------
- 5.4.x - 5.5.x   | dev-master
+ 5.4.x - 5.5.x   | v0.1.2
 
 Make sure you have the Cassandra PHP driver installed (version 1.2+). You can find more information at http://datastax.github.io/php-driver/.
 
@@ -245,6 +245,8 @@ TODO:
 - improved model update
 - full test coverage
 - fix diff between \Cassandra\Date with Carbon
+- add schema queries support
+- add ability to use async queries
 
 Docker:
 ------
