@@ -121,6 +121,8 @@ Note: you can set specific consistency level according to the query using option
 
 Eloquent
 --------
+
+#### Model Usage
 Supported most of eloquent query build features, events, fields access.
 
 ```php
@@ -132,6 +134,33 @@ Supported most of eloquent query build features, events, fields access.
 ```
 
 Relations - NOT SUPPORTED
+
+#### Attributes casting
+
+There is ability to use UUID as model primary key
+
+```
+class Item 
+{
+    ...
+    
+    protected $keyType = 'uuid';
+    
+    public $incrementing = true; // will automatically cast your primary key to keyType
+    
+    // OR
+    
+    protected $keyType = 'uuid';
+    
+    public $incrementing = false;
+    
+    protected $casts = [
+        'id' => 'uuid',
+    ];    
+    ...
+}
+```
+
 
 Query Builder
 -------------

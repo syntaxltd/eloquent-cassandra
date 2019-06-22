@@ -3,7 +3,9 @@
 namespace lroman242\LaravelCassandra\Eloquent;
 
 use Carbon\Carbon;
+use Cassandra\Date;
 use Cassandra\Rows;
+use Cassandra\Time;
 use Cassandra\Timestamp;
 use lroman242\LaravelCassandra\CassandraTypesTrait;
 use lroman242\LaravelCassandra\Collection;
@@ -28,6 +30,13 @@ abstract class Model extends BaseModel
      * @var bool
      */
     public $incrementing = false;
+
+    /**
+     * The storage format of the model's time columns.
+     *
+     * @var string
+     */
+    protected $timeFormat;
 
     /**
      * @inheritdoc
@@ -79,7 +88,7 @@ abstract class Model extends BaseModel
     protected function asDateTime($value)
     {
         // Convert UTCDateTime instances.
-        if ($value instanceof Timestamp) {
+        if ($value instanceof Timestamp || $value instanceof Date) {
             return Carbon::instance($value->toDateTime());
         }
 
@@ -154,9 +163,12 @@ abstract class Model extends BaseModel
     /**
      * Determine if the new and old values for a given key are equivalent.
      *
-     * @param  string $key
-     * @param  mixed $current
+     * @param string $key
+     * @param mixed $current
+     *
      * @return bool
+     *
+     * @throws \Exception
      */
     public function originalIsEquivalent($key, $current)
     {
@@ -201,4 +213,52 @@ abstract class Model extends BaseModel
         return $value;
     }
 
+    /**
+     * Cast an attribute to a native PHP type.
+     *
+     * @param  string  $key
+     * @param  mixed  $value
+     *
+     * @return mixed
+     *
+     * @throws \Exception
+     */
+    protected function castAttribute($key, $value)
+    {
+        if ($this->getCastType($key) == 'string' && $value instanceof Time) {
+            return (new \DateTime('today', new \DateTimeZone("+0")))
+                ->modify('+' . $value->seconds() . ' seconds')
+                ->format($this->getTimeFormat());
+        }
+
+        if ($this->getCastType($key) == 'int' && $value instanceof Time) {
+            return $value->seconds();
+        }
+
+        return parent::castAttribute($key, $value);
+    }
+
+    /**
+     * Get the format for time stored in database.
+     *
+     * @return string
+     */
+    public function getTimeFormat()
+    {
+        return $this->timeFormat ?: 'H:i:s';
+    }
+
+    /**
+     * Get the format for time stored in database.
+     *
+     * @param string $format
+     *
+     * @return self
+     */
+    public function setTimeFormat($format)
+    {
+        $this->timeFormat = $format;
+
+        return $this;
+    }
 }

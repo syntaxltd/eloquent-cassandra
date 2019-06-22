@@ -20,6 +20,18 @@ CREATE TABLE testtable_popularity (
     PRIMARY KEY ((name))
 );
 
+CREATE TABLE testable_types (
+    id UUID,
+    timeId TIMEUUID,
+    name TEXT,
+    date DATE,
+    time TIME,
+    datetime TIMESTAMP,
+    ip  INET,
+    asciiStr  ASCII,
+    PRIMARY KEY ((id))
+);
+
 CREATE TABLE users (
     id          INT,
     name        TEXT,
