@@ -39,6 +39,13 @@ abstract class Model extends BaseModel
     protected $timeFormat;
 
     /**
+     * List of columns in primary key
+     *
+     * @var array
+     */
+    protected $primaryColumns = [];
+
+    /**
      * @inheritdoc
      */
     public function newEloquentBuilder($query)
@@ -110,7 +117,7 @@ abstract class Model extends BaseModel
     /**
      * Qualify the given column name by the model's table.
      *
-     * @param  string  $column
+     * @param string $column
      * @return string
      */
     public function qualifyColumn($column)
@@ -134,7 +141,7 @@ abstract class Model extends BaseModel
     /**
      * Create a new Eloquent Collection instance.
      *
-     * @param  Rows|array  $rows
+     * @param Rows|array $rows
      *
      * @return Collection
      *
@@ -194,7 +201,7 @@ abstract class Model extends BaseModel
         }
 
         return is_numeric($current) && is_numeric($original)
-            && strcmp((string) $current, (string) $original) === 0;
+            && strcmp((string)$current, (string)$original) === 0;
     }
 
     /**
@@ -216,8 +223,8 @@ abstract class Model extends BaseModel
     /**
      * Cast an attribute to a native PHP type.
      *
-     * @param  string  $key
-     * @param  mixed  $value
+     * @param string $key
+     * @param mixed $value
      *
      * @return mixed
      *
@@ -261,4 +268,99 @@ abstract class Model extends BaseModel
 
         return $this;
     }
+
+    /**
+     * Save the model to the database.
+     *
+     * @param array $options
+     *
+     * @return bool
+     */
+    public function save(array $options = [])
+    {
+        $query = $this->newQueryWithoutScopes();
+
+        // If the "saving" event returns false we'll bail out of the save and return
+        // false, indicating that the save failed. This provides a chance for any
+        // listeners to cancel save operations if validations fail or whatever.
+        if ($this->fireModelEvent('saving') === false) {
+            return false;
+        }
+
+        // If the model already exists in the database we can just update our record
+        // that is already in this database using the current IDs in this "where"
+        // clause to only update this model. Otherwise, we'll just insert them.
+        if ($this->exists) {
+            if ($this->isDirty()) {
+                // If any of primary key columns where updated cassandra won't be able
+                // to process update of existed record. That is why existed record will
+                // be deleted and inserted new one
+                $dirtyKeys = array_keys($this->getDirty());
+                $dirtyPrimaryKeys = array_intersect($this->primaryColumns, $dirtyKeys);
+                $dirtyPrimaryExists = count($dirtyPrimaryKeys) > 0;
+
+                // Check if any of primary key columns is dirty
+                if (!$dirtyPrimaryExists) {
+                    $primaryColumnsExceptId = array_diff($this->primaryColumns, [$this->primaryKey]);
+
+                    foreach ($primaryColumnsExceptId as $key) {
+                        $query->where($key, $this->attributes[$key]);
+                    }
+
+                    $saved = $this->performUpdate($query);
+                } else {
+                    $this->fireModelEvent('updating');
+
+                    // Disable model deleting, deleted, creating and created events
+                    $ed = $this->getEventDispatcher();
+                    $this->unsetEventDispatcher();
+
+                    $oldValues = $this->original;
+                    // Insert new record (duplicate)
+                    $saved = $this->performInsert($query);
+
+                    // Delete old record
+                    $deleteQuery = static::query();
+
+                    foreach ($this->primaryColumns as $key) {
+                        $deleteQuery->where($key, $oldValues[$key]);
+                    }
+
+                    $deleteQuery->delete();
+
+                    //Already in silent mode
+                    if ($ed !== null) {
+                        $this->setEventDispatcher($ed);
+                    }
+
+                    $this->fireModelEvent('updated');
+                }
+            } else {
+                $saved = true;
+            }
+        }
+
+        // If the model is brand new, we'll insert it into our database and set the
+        // ID attribute on the model to the value of the newly inserted row's ID
+        // which is typically an auto-increment value managed by the database.
+        else {
+            $saved = $this->performInsert($query);
+
+            if (!$this->getConnectionName() &&
+                $connection = $query->getConnection()
+            ) {
+                $this->setConnection($connection->getName());
+            }
+        }
+
+        // If the model is successfully saved, we need to do a few more things once
+        // that is done. We will call the "saved" method here to run any actions
+        // we need to happen after a model gets successfully saved right here.
+        if ($saved) {
+            $this->finishSave($options);
+        }
+
+        return $saved;
+    }
+
 }

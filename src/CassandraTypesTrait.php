@@ -3,7 +3,7 @@
 
 namespace lroman242\LaravelCassandra;
 
-use \Cassandra\Value;
+use Cassandra\Value;
 
 trait CassandraTypesTrait
 {

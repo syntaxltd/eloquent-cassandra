@@ -271,7 +271,6 @@ $users = User::from('users_by_country_view')->where('country', 'USA')->get();
 TODO:
 -----
 - full support of composite primary key
-- improved model update
 - full test coverage
 - fix diff between \Cassandra\Date with Carbon
 - add schema queries support
