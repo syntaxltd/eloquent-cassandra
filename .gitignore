@@ -9,3 +9,4 @@ composer.lock
 *.project
 .idea/
 sturb/
+*.log
