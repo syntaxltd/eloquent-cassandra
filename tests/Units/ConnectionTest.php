@@ -1,8 +1,11 @@
 <?php
 
-use \Illuminate\Support\Facades\DB;
-use \lroman242\LaravelCassandra\Connection;
-use \lroman242\LaravelCassandra\Exceptions\CassandraNotSupportedException;
+namespace AHAbid\EloquentCassandra\Tests\Units;
+
+use AHAbid\EloquentCassandra\Tests\TestCase;
+use AHAbid\EloquentCassandra\Connection;
+use AHAbid\EloquentCassandra\Exceptions\CassandraNotSupportedException;
+use Illuminate\Support\Facades\DB;
 
 class ConnectionTest extends TestCase
 {
@@ -134,7 +137,7 @@ class ConnectionTest extends TestCase
         $table = 'testtable';
 
         $builder = DB::connection('cassandra')->table($table);
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Query\Builder::class, $builder);
+        $this->assertInstanceOf(\AHAbid\EloquentCassandra\Query\Builder::class, $builder);
         $this->assertEquals($builder->from, $table);
     }
 

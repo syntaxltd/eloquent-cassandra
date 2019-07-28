@@ -1,8 +1,10 @@
 <?php
 
-use lroman242\LaravelCassandra\Eloquent\Model as Casloquent;
+namespace AHAbid\EloquentCassandra\Fixtures\Models;
 
-class TestableType extends Casloquent
+use AHAbid\EloquentCassandra\Eloquent\Model;
+
+class TestableType extends Model
 {
     protected $keyType = 'uuid';
 

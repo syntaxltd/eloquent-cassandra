@@ -1,7 +1,9 @@
 <?php
 
+namespace AHAbid\EloquentCassandra\Tests\Units;
 
-use Illuminate\Foundation\Application;
+use AHAbid\EloquentCassandra\Tests\TestCase;
+use AHAbid\EloquentCassandra\Fixtures\Models\TestableType;
 
 class ModelCastsTest extends TestCase
 {

@@ -1,15 +1,15 @@
 <?php
 
-namespace lroman242\LaravelCassandra\Eloquent;
+namespace AHAbid\EloquentCassandra\Eloquent;
 
 use Carbon\Carbon;
 use Cassandra\Date;
 use Cassandra\Rows;
 use Cassandra\Time;
 use Cassandra\Timestamp;
-use lroman242\LaravelCassandra\CassandraTypesTrait;
-use lroman242\LaravelCassandra\Collection;
-use lroman242\LaravelCassandra\Query\Builder as QueryBuilder;
+use AHAbid\EloquentCassandra\CassandraTypesTrait;
+use AHAbid\EloquentCassandra\Collection;
+use AHAbid\EloquentCassandra\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\Model as BaseModel;
 
 abstract class Model extends BaseModel

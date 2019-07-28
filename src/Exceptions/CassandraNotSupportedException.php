@@ -1,7 +1,6 @@
 <?php
 
-namespace lroman242\LaravelCassandra\Exceptions;
-
+namespace AHAbid\EloquentCassandra\Exceptions;
 
 class CassandraNotSupportedException extends \RuntimeException
 {

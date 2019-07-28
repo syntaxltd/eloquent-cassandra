@@ -1,5 +1,9 @@
 <?php
 
+namespace AHAbid\EloquentCassandra\Tests\Units;
+
+use AHAbid\EloquentCassandra\Tests\TestCase;
+use AHAbid\EloquentCassandra\Fixtures\Models\User;
 
 class CollectionTest extends TestCase
 {
@@ -9,7 +13,7 @@ class CollectionTest extends TestCase
 
         \Illuminate\Support\Facades\DB::connection('cassandra')->select('TRUNCATE users');
 
-        $faker = Faker\Factory::create();
+        $faker = \Faker\Factory::create();
         for($i = 1; $i <= 20; $i++) {
             \Illuminate\Support\Facades\DB::connection('cassandra')
                 ->table('users')
@@ -30,7 +34,7 @@ class CollectionTest extends TestCase
     public function testModelResponseIsCollection()
     {
         $result = User::get();
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $result);
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $result);
     }
 
     public function testCorrectResultsAmount()
@@ -68,16 +72,16 @@ class CollectionTest extends TestCase
 
     public function testGetNextPage()
     {
-        /** @var \lroman242\LaravelCassandra\Collection $result */
+        /** @var \AHAbid\LaravelCassandra\Collection $result */
         $result = User::setPageSize(11)->getPage();
         $this->assertFalse($result->isLastPage());
 
         $nextPageResults = $result->nextPage();
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $nextPageResults);
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $nextPageResults);
         $this->assertTrue($nextPageResults->isLastPage());
 
         $nextPageResults2 = $nextPageResults->nextPage();
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $nextPageResults2);
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $nextPageResults2);
         $this->assertTrue($nextPageResults2->isEmpty());
     }
 
@@ -96,7 +100,7 @@ class CollectionTest extends TestCase
         $token = $result->getNextPageToken();
 
         $nextPageResults = User::setPaginationStateToken($token)->getPage();
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $nextPageResults);
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $nextPageResults);
         $this->assertTrue($nextPageResults->isLastPage());
     }
 
@@ -119,7 +123,7 @@ class CollectionTest extends TestCase
     public function testPageFindInCollectionByKeyValue()
     {
         $result = User::setPageSize(5)->getPage();
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $result);
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $result);
 
         $searchResults = $result->find(10);
         $this->assertTrue($searchResults->id == 10);
@@ -128,7 +132,7 @@ class CollectionTest extends TestCase
     public function testFindInCollectionByKeyValue()
     {
         $result = User::get();
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $result);
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $result);
 
         $searchResults = $result->find(10);
         $this->assertTrue($searchResults->id == 10);
@@ -151,7 +155,7 @@ class CollectionTest extends TestCase
         $result = User::get();
         $searchResults = $result->find($searchValues);
 
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $searchResults);
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $searchResults);
         $this->assertEquals(0, $searchResults->count());
     }
 
@@ -161,7 +165,7 @@ class CollectionTest extends TestCase
         $result = User::get();
         $searchResults = $result->find($searchValues);
 
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $searchResults);
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $searchResults);
         $this->assertEquals(5, $searchResults->count());
         foreach ($searchResults as $item) {
             $this->assertTrue($searchValues->contains($item->id));
@@ -174,7 +178,7 @@ class CollectionTest extends TestCase
         $result = User::where('id', '>', 40)->allowFiltering(true)->get();
         $searchResults = $result->find($searchValues);
 
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $searchResults);
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $searchResults);
         $this->assertEquals(0, $searchResults->count());
     }
 
@@ -215,7 +219,7 @@ class CollectionTest extends TestCase
         $exceptKeys = [1,2];
         $exceptResults = $results->except($exceptKeys);
 
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $exceptResults);
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $exceptResults);
         $this->assertEquals($exceptResults->count(), ($results->count() - count($exceptKeys)));
 
         foreach ($exceptResults as $value) {
@@ -230,7 +234,7 @@ class CollectionTest extends TestCase
         $onlyKeys = [1, 2];
 
         $onlyResults = $results->only($onlyKeys);
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $onlyResults);
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $onlyResults);
         $this->assertEquals($onlyResults->count(), count($onlyKeys));
 
         foreach ($onlyResults as $value) {
@@ -244,7 +248,7 @@ class CollectionTest extends TestCase
 
         $onlyResults = $results->only(null);
 
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $onlyResults);
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $onlyResults);
         $this->assertEquals($onlyResults->count(), $results->count());
 
         foreach ($onlyResults as $value) {
@@ -264,7 +268,7 @@ class CollectionTest extends TestCase
 
         $uniqueResults = $resultsWithDuplicate->unique('name');
 
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $uniqueResults);
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $uniqueResults);
         $this->assertEquals($uniqueResults->count(), $originCount);
     }
 
@@ -297,7 +301,7 @@ class CollectionTest extends TestCase
         $this->assertEquals(7, $results->count());
 
         $uniqueResults = $results->unique('name');
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $uniqueResults);
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $uniqueResults);
         $this->assertEquals($uniqueResults->count(), $results->count() - 1);
     }
 
@@ -317,13 +321,13 @@ class CollectionTest extends TestCase
 
         $uniqueResults = $results->unique();
 
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $uniqueResults);
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $uniqueResults);
         $this->assertEquals(5, $uniqueResults->count());
     }
 
     public function testCollectionMerge()
     {
-        /** @var \lroman242\LaravelCassandra\Collection $results */
+        /** @var \AHAbid\LaravelCassandra\Collection $results */
         $results = User::setPageSize(5)->getPage();
         $this->assertEquals(5, $results->count());
 
@@ -340,11 +344,11 @@ class CollectionTest extends TestCase
 
     public function testCollectionMergeWithDuplicates()
     {
-        /** @var \lroman242\LaravelCassandra\Collection $results */
+        /** @var \AHAbid\LaravelCassandra\Collection $results */
         $results = User::setPageSize(5)->getPage();
         $this->assertEquals(5, $results->count());
 
-        /** @var \lroman242\LaravelCassandra\Collection $additionalResults */
+        /** @var \AHAbid\LaravelCassandra\Collection $additionalResults */
         $additionalResults = User::setPageSize(7)->getPage();
         $this->assertEquals(7, $additionalResults->count());
 
@@ -358,16 +362,16 @@ class CollectionTest extends TestCase
 
     public function testCollectionIntersect()
     {
-        /** @var \lroman242\LaravelCassandra\Collection $results */
+        /** @var \AHAbid\LaravelCassandra\Collection $results */
         $results = User::setPageSize(5)->getPage();
         $this->assertEquals(5, $results->count());
 
-        /** @var \lroman242\LaravelCassandra\Collection $additionalResults */
+        /** @var \AHAbid\LaravelCassandra\Collection $additionalResults */
         $additionalResults = User::setPageSize(7)->getPage();
         $this->assertEquals(7, $additionalResults->count());
 
         $intersectResults = $results->intersect($additionalResults);
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $intersectResults);
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $intersectResults);
         $this->assertEquals(5, $intersectResults->count());
 
         foreach ($intersectResults as $item) {
@@ -377,20 +381,20 @@ class CollectionTest extends TestCase
 
     public function testCollectionDiff()
     {
-        /** @var \lroman242\LaravelCassandra\Collection $results */
+        /** @var \AHAbid\LaravelCassandra\Collection $results */
         $results = User::setPageSize(5)->getPage();
         $this->assertEquals(5, $results->count());
 
-        /** @var \lroman242\LaravelCassandra\Collection $additionalResults */
+        /** @var \AHAbid\LaravelCassandra\Collection $additionalResults */
         $additionalResults = User::setPageSize(7)->getPage();
         $this->assertEquals(7, $additionalResults->count());
 
         $diffResults = $results->diff($additionalResults);
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $diffResults);
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $diffResults);
         $this->assertEquals(0, $diffResults->count());
 
         $diffResults = $additionalResults->diff($results);
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $diffResults);
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $diffResults);
         $this->assertEquals(2, $diffResults->count());
 
         foreach ($diffResults as $item) {
@@ -400,12 +404,12 @@ class CollectionTest extends TestCase
 
     public function testCollectionFresh()
     {
-        /** @var \lroman242\LaravelCassandra\Collection $results */
+        /** @var \AHAbid\LaravelCassandra\Collection $results */
         $results = User::setPageSize(5)->getPage();
         $this->assertEquals(5, $results->count());
 
         $fresh = $results->fresh();
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $fresh);
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $fresh);
         $this->assertEquals(5, $fresh->count());
 
         foreach ($fresh as $item) {
@@ -415,14 +419,14 @@ class CollectionTest extends TestCase
 
     public function testCollectionFreshWithoutDeleted()
     {
-        /** @var \lroman242\LaravelCassandra\Collection $results */
+        /** @var \AHAbid\LaravelCassandra\Collection $results */
         $results = User::setPageSize(5)->getPage();
         $this->assertEquals(5, $results->count());
 
         $results->first()->delete();
 
         $fresh = $results->fresh();
-//        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $fresh);
+//        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $fresh);
         $this->assertEquals(5, $fresh->count());
 
         $notEmptyResults = $fresh->filter(function ($item) {
@@ -438,11 +442,11 @@ class CollectionTest extends TestCase
 
     public function testCollectionFreshForEmptyCollection()
     {
-        $collection = new \lroman242\LaravelCassandra\Collection();
+        $collection = new \AHAbid\LaravelCassandra\Collection();
         $this->assertEquals(0, $collection->count());
 
         $fresh = $collection->fresh();
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $fresh);
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $fresh);
         $this->assertEquals(0, $fresh->count());
     }
 
@@ -455,11 +459,11 @@ class CollectionTest extends TestCase
             $users[] = $user;
         }
 
-        $collection = new \lroman242\LaravelCassandra\Collection($users, reset($users));
+        $collection = new \AHAbid\LaravelCassandra\Collection($users, reset($users));
         $this->assertEquals(3, $collection->count());
 
         $fresh = $collection->fresh();
-//        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $fresh);
+//        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $fresh);
         $this->assertEquals(3, $fresh->count());
 
         foreach ($fresh->all() as $user) {
@@ -470,7 +474,7 @@ class CollectionTest extends TestCase
     public function testCollectionGetRowFromCollectionWithoutRows()
     {
         $results = User::setPageSize(5)->getPage();
-        $collection = new \lroman242\LaravelCassandra\Collection($results->values()->all());
+        $collection = new \AHAbid\LaravelCassandra\Collection($results->values()->all());
 
         $this->assertNull($collection->getRows());
     }
@@ -478,7 +482,7 @@ class CollectionTest extends TestCase
     public function testCollectionGetNextPageTokenFromCollectionWithoutRows()
     {
         $results = User::setPageSize(5)->getPage();
-        $collection = new \lroman242\LaravelCassandra\Collection($results->values()->all());
+        $collection = new \AHAbid\LaravelCassandra\Collection($results->values()->all());
 
         $this->assertNull($collection->getNextPageToken());
     }
@@ -486,19 +490,19 @@ class CollectionTest extends TestCase
     public function testCollectionNextPageTokenFromCollectionWithoutRows()
     {
         $results = User::setPageSize(5)->getPage();
-        $collection = new \lroman242\LaravelCassandra\Collection($results->values()->all());
+        $collection = new \AHAbid\LaravelCassandra\Collection($results->values()->all());
 
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $collection->nextPage());
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $collection->nextPage());
         $this->assertTrue($collection->nextPage()->isEmpty());
     }
 
     public function testCollectionAppendNextPageFromCollectionWithoutRows()
     {
         $results = User::setPageSize(5)->getPage();
-        $collection = new \lroman242\LaravelCassandra\Collection($results->values()->all());
+        $collection = new \AHAbid\LaravelCassandra\Collection($results->values()->all());
 
         $this->assertEquals(5, $collection->count());
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $collection->appendNextPage());
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $collection->appendNextPage());
         $this->assertEquals(5, $collection->count());
     }
 
@@ -507,7 +511,7 @@ class CollectionTest extends TestCase
         $results = User::setPageSize(5)->getPage();
 
         $this->assertEquals(5, $results->count());
-        $this->assertInstanceOf(\lroman242\LaravelCassandra\Collection::class, $results->appendNextPage());
+        $this->assertInstanceOf(\AHAbid\LaravelCassandra\Collection::class, $results->appendNextPage());
         $this->assertEquals(10, $results->count());
     }
 }

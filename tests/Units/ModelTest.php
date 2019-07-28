@@ -1,8 +1,14 @@
 <?php
 
+namespace AHAbid\EloquentCassandra\Tests\Units;
+
+use AHAbid\EloquentCassandra\Tests\TestCase;
+use AHAbid\EloquentCassandra\Eloquent\Model;
+use AHAbid\EloquentCassandra\Fixtures\Models\Book;
+use AHAbid\EloquentCassandra\Fixtures\Models\Item;
+use AHAbid\EloquentCassandra\Fixtures\Models\User;
 use Carbon\Carbon;
 use Cassandra\Timestamp;
-use lroman242\LaravelCassandra\Eloquent\Model;
 use Illuminate\Database\Eloquent\Collection;
 
 class ModelTest extends TestCase
@@ -16,7 +22,7 @@ class ModelTest extends TestCase
     {
         $user = new User;
         $this->assertInstanceOf(Model::class, $user);
-        $this->assertInstanceOf('lroman242\LaravelCassandra\Connection', $user->getConnection());
+        $this->assertInstanceOf('AHAbid\LaravelCassandra\Connection', $user->getConnection());
         $this->assertEquals(false, $user->exists);
         $this->assertEquals('users', $user->getTable());
         $this->assertEquals('id', $user->getKeyName());

@@ -1,13 +1,10 @@
 <?php
 
-
-namespace lroman242\LaravelCassandra;
-
+namespace AHAbid\EloquentCassandra;
 
 use Illuminate\Database\Connectors\Connector;
-use Illuminate\Queue\Connectors\ConnectorInterface;
 
-class CassandraConnector extends Connector implements ConnectorInterface
+class CassandraConnector extends Connector
 {
     const DEFAULT_PAGE_SIZE = 5000;
 

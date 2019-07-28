@@ -1,9 +1,9 @@
 <?php
 
-namespace lroman242\LaravelCassandra;
+namespace AHAbid\EloquentCassandra;
 
 use \Cassandra\Rows;
-use lroman242\LaravelCassandra\Eloquent\Model;
+use AHAbid\EloquentCassandra\Eloquent\Model;
 use Illuminate\Database\Eloquent\Collection as BaseCollection;
 
 class Collection extends BaseCollection

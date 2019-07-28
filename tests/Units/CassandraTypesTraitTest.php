@@ -1,5 +1,9 @@
 <?php
 
+namespace AHAbid\EloquentCassandra\Tests\Units;
+
+use AHAbid\EloquentCassandra\Tests\TestCase;
+use AHAbid\EloquentCassandra\Fixtures\Models\Item;
 
 class CassandraTypesTraitTest extends TestCase
 {
@@ -19,7 +23,7 @@ class CassandraTypesTraitTest extends TestCase
         }
         $traits = array_unique($traits);
 
-        $this->assertArrayHasKey(\lroman242\LaravelCassandra\CassandraTypesTrait::class, $traits);
+        $this->assertArrayHasKey(\AHAbid\LaravelCassandra\CassandraTypesTrait::class, $traits);
     }
 
     public function testIsCassandraValueObjectDate()

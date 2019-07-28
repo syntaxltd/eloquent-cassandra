@@ -1,9 +1,9 @@
 <?php
 
-namespace lroman242\LaravelCassandra\Eloquent;
+namespace AHAbid\EloquentCassandra\Eloquent;
 
 use Cassandra\Rows;
-use lroman242\LaravelCassandra\Collection;
+use AHAbid\EloquentCassandra\Collection;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 
 class Builder extends EloquentBuilder

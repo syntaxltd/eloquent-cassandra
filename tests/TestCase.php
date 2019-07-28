@@ -1,5 +1,9 @@
 <?php
 
+namespace AHAbid\EloquentCassandra\Tests;
+
+use AHAbid\EloquentCassandra\CassandraServiceProvider;
+
 class TestCase extends Orchestra\Testbench\TestCase
 {
     /**
@@ -11,7 +15,7 @@ class TestCase extends Orchestra\Testbench\TestCase
     protected function getPackageProviders($app)
     {
         return [
-            lroman242\LaravelCassandra\CassandraServiceProvider::class,
+            CassandraServiceProvider::class,
         ];
     }
 
@@ -34,10 +38,10 @@ class TestCase extends Orchestra\Testbench\TestCase
         $app['config']->set('auth.providers.users.model', 'User');
         $app['config']->set('cache.driver', 'array');
 
-        DB::connection('cassandra')->select('TRUNCATE testtable');
-        DB::connection('cassandra')->select('TRUNCATE testtable_popularity');
+        $app['db']->connection('cassandra')->select('TRUNCATE testtable');
+        $app['db']->connection('cassandra')->select('TRUNCATE testtable_popularity');
         for ($i = 1; $i <= 10; $i++) {
-            DB::connection('cassandra')->select('INSERT INTO testtable (id, name) VALUES (?, ?)', [$i, "value$i"]);
+            $app['db']->connection('cassandra')->select('INSERT INTO testtable (id, name) VALUES (?, ?)', [$i, "value$i"]);
         }
     }
 }

@@ -1,9 +1,9 @@
 <?php
 
-namespace lroman242\LaravelCassandra\Query;
+namespace AHAbid\EloquentCassandra\Query;
 
-use lroman242\LaravelCassandra\Collection;
-use lroman242\LaravelCassandra\Connection;
+use AHAbid\EloquentCassandra\Collection;
+use AHAbid\EloquentCassandra\Connection;
 use Illuminate\Database\Query\Builder as BaseBuilder;
 use Illuminate\Support\Arr;
 
@@ -97,7 +97,7 @@ class Builder extends BaseBuilder
             return $this->connection->insertBulk($queries, $bindings);
         }
     }
-    
+
     /**
      * Execute the query as a "select" statement.
      *

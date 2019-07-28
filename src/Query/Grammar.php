@@ -1,6 +1,6 @@
 <?php
 
-namespace lroman242\LaravelCassandra\Query;
+namespace AHAbid\EloquentCassandra\Query;
 
 use Illuminate\Database\Query\Grammars\Grammar as BaseGrammar;
 

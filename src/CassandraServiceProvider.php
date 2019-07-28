@@ -1,6 +1,6 @@
 <?php
 
-namespace lroman242\LaravelCassandra;
+namespace AHAbid\EloquentCassandra;
 
 use Illuminate\Support\ServiceProvider;
 

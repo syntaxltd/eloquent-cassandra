@@ -1,12 +1,13 @@
 <?php
 
-namespace lroman242\LaravelCassandra;
+namespace AHAbid\EloquentCassandra;
 
 use Cassandra;
 use Cassandra\BatchStatement;
-use \lroman242\LaravelCassandra\Exceptions\CassandraNotSupportedException;
+use AHAbid\EloquentCassandra\Exceptions\CassandraNotSupportedException;
+use Illuminate\Database\Connection as BaseConnection;
 
-class Connection extends \Illuminate\Database\Connection
+class Connection extends BaseConnection
 {
     /**
      * The Cassandra keyspace
