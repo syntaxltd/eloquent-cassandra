@@ -1,33 +1,23 @@
-Laravel Cassandra
-===============
+# Eloquent Cassandra
 
-A Cassandra based Eloquent model and Query builder for Laravel (Casloquent)
+Cassandra driver for Eloquent ORM.
 
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/?branch=master)[![Code Coverage](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/?branch=master)[![Build Status](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/badges/build.png?b=master)](https://scrutinizer-ci.com/g/lroman242/laravel-cassandra/build-status/master)
 
-**Real test coverage is much lower**
-
-Installation
+## Installation
 ------------
 
-### Laravel version Compatibility
-
- Laravel  | Package
-:---------|:----------
- 5.4.x - 5.5.x   | v0.1.2
-
-Make sure you have the Cassandra PHP driver installed (version 1.2+). You can find more information at http://datastax.github.io/php-driver/.
+*Note:* Make sure you have the Cassandra PHP driver installed (version 1.3+). You can find more information at [DataStax PHP Driver](http://datastax.github.io/php-driver/).
 
 Installation using composer:
 
 ```
-composer require lroman242/laravel-cassandra
+composer require a-h-abid/eloquent-cassandra
 ```
 #### Laravel
 And add the service provider in `config/app.php`:
 
 ```php
-lroman242\LaravelCassandra\CassandraServiceProvider::class,
+AHAbid\EloquentCassandra\CassandraServiceProvider::class,
 ```
 
 The service provider will register a cassandra database extension with the original database manager. There is no need to register additional facades or objects. When using cassandra connections, Laravel will automatically provide you with the corresponding cassandra objects.
@@ -37,7 +27,7 @@ For usage outside Laravel, check out the [Capsule manager](https://github.com/il
 ```php
 $capsule->getDatabaseManager()->extend('cassandra', function($config)
 {
-    return new lroman242\LaravelCassandra\Connection($config);
+    return new AHAbid\EloquentCassandra\Connection($config);
 });
 ```
 #### Lumen
@@ -49,7 +39,7 @@ Add next lines to your `bootstrap.php`
 ```
 
 ```php
-    $app->register(lroman242\LaravelCassandra\CassandraServiceProvider::class);
+    $app->register(AHAbid\EloquentCassandra\CassandraServiceProvider::class);
 ```
 
 Configuration
@@ -116,7 +106,7 @@ Note: list of available consistency levels (php constants):
     Cassandra::CONSISTENCY_EACH_QUORUM
     Cassandra::CONSISTENCY_LOCAL_SERIAL
     Cassandra::CONSISTENCY_LOCAL_ONE
-    
+
 Note: you can set specific consistency level according to the query using options
 
 Eloquent
@@ -127,9 +117,9 @@ Supported most of eloquent query build features, events, fields access.
 
 ```php
     $users = User::all();
-    
+
     $user = User::where('email', 'tester@test.com')->first();
-    
+
     $user = User::find(new \Cassandra\Uuid("7e4c27e2-1991-11e8-accf-0ed5f89f718b"))
 ```
 
@@ -140,23 +130,23 @@ Relations - NOT SUPPORTED
 There is ability to use UUID as model primary key
 
 ```
-class Item 
+class Item
 {
     ...
-    
+
     protected $keyType = 'uuid';
-    
+
     public $incrementing = true; // will automatically cast your primary key to keyType
-    
+
     // OR
-    
+
     protected $keyType = 'uuid';
-    
+
     public $incrementing = false;
-    
+
     protected $casts = [
         'id' => 'uuid',
-    ];    
+    ];
     ...
 }
 ```
@@ -236,7 +226,7 @@ while(!$users->isLastPage()) {
     foreach($users as $user) {
         // here you can write a lines to csv file
     }
-    
+
     $users = $users->nextPage();
 }
 ```
@@ -246,13 +236,13 @@ while(!$users->isLastPage()) {
 ```php
 public function getComments(Request $request) {
     ...
-    
+
     $comments = Comment::setPageSize(50)
         ->setPaginationStateToken($request->get('nextPageToken', null)
         ->getPage();
-    
+
     ...
-    
+
     return response()->json([
         ...
         'comments' => $comments,
@@ -270,11 +260,11 @@ $users = User::from('users_by_country_view')->where('country', 'USA')->get();
 
 TODO:
 -----
-- full support of composite primary key
-- full test coverage
-- fix diff between \Cassandra\Date with Carbon
-- add schema queries support
-- add ability to use async queries
+[ ] full support of composite primary key
+[ ] full test coverage
+[ ] fix diff between \Cassandra\Date with Carbon
+[ ] add schema queries support
+[ ] add ability to use async queries
 
 Docker:
 ------
