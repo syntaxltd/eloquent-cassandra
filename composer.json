@@ -1,8 +1,8 @@
 {
-    "name": "a-h-abid/laravel-cassandra",
-    "description": "Cassandra driver for Eloquent",
+    "name": "a-h-abid/eloquent-cassandra",
+    "description": "Cassandra driver for Eloquent ORM",
     "keywords": ["laravel","lumen","eloquent","cassandra","csql","database","model"],
-    "homepage": "https://github.com/a-h-abid/laravel-cassandra",
+    "homepage": "https://github.com/a-h-abid/eloquent-cassandra",
     "version": "0.0.1",
     "authors": [
         {
