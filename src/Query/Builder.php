@@ -4,11 +4,14 @@ namespace AHAbid\EloquentCassandra\Query;
 
 use AHAbid\EloquentCassandra\Collection;
 use AHAbid\EloquentCassandra\Connection;
+use AHAbid\EloquentCassandra\CassandraTypesTrait;
 use Illuminate\Database\Query\Builder as BaseBuilder;
 use Illuminate\Support\Arr;
 
 class Builder extends BaseBuilder
 {
+    use CassandraTypesTrait;
+
     /**
      * Use cassandra filtering
      *
@@ -226,21 +229,9 @@ class Builder extends BaseBuilder
         $newRow = [];
 
         foreach ($row as $field => $value) {
-            $newValue = $value;
-
-            if (is_object($value)) {
-                switch (get_class($value)) {
-                    case \Cassandra\Uuid::class:
-                        $newValue = $value->uuid();
-                        break;
-
-                    case \Cassandra\Timestamp::class:
-                        $newValue = new Carbon($value->time());
-                        break;
-                }
-            }
-
-            $newRow[$field] = $newValue;
+            $newRow[$field] = $this->isCassandraValueObject($value)
+                ? $this->valueFromCassandraObject($value)
+                : $value;
         }
 
         return $newRow;
