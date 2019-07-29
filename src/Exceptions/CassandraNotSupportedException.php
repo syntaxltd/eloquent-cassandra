@@ -2,7 +2,4 @@
 
 namespace AHAbid\EloquentCassandra\Exceptions;
 
-class CassandraNotSupportedException extends \RuntimeException
-{
-
-}
+class CassandraNotSupportedException extends \RuntimeException {}
