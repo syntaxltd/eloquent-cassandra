@@ -333,7 +333,7 @@ class Connection extends BaseConnection
     /**
      * @inheritDoc
      */
-    public function rollBack()
+    public function rollBack($toLevel = null)
     {
         throw new CassandraNotSupportedException("Transactions is not supported by Cassandra database");
     }

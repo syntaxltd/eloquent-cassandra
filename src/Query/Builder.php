@@ -126,6 +126,11 @@ class Builder extends BaseBuilder
         /** @var \Cassandra\Rows $results */
         $results = $this->processor->processSelect($this, $this->runSelect($options));
 
+        $newResults = [];
+        foreach ($results as $row) {
+            $newResults[] = $this->parseRowTypes($row);
+        }
+
         // Get results from all pages
         $collection = new Collection($results);
 
@@ -133,6 +138,7 @@ class Builder extends BaseBuilder
             while (!$results->isLastPage()) {
                 $results = $results->nextPage();
                 foreach ($results as $row) {
+                    $row = $this->parseRowTypes($row);
                     $collection->push($row);
                 }
             }
@@ -207,5 +213,36 @@ class Builder extends BaseBuilder
         $this->fetchAllResults = true;
 
         return $result;
+    }
+
+    /**
+     * Parse Row Types
+     *
+     * @param array $row
+     * @return array
+     */
+    public function parseRowTypes($row)
+    {
+        $newRow = [];
+
+        foreach ($row as $field => $value) {
+            $newValue = $value;
+
+            if (is_object($value)) {
+                switch (get_class($value)) {
+                    case \Cassandra\Uuid::class:
+                        $newValue = $value->uuid();
+                        break;
+
+                    case \Cassandra\Timestamp::class:
+                        $newValue = new Carbon($value->time());
+                        break;
+                }
+            }
+
+            $newRow[$field] = $newValue;
+        }
+
+        return $newRow;
     }
 }
