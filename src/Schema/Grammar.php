@@ -34,7 +34,10 @@ class Grammar extends BaseGrammar
      */
     public function compileTableExists()
     {
-        return "SELECT \"table_name\" FROM \"system_schema\".\"tables\" WHERE table_name = :\"table_name\" AND keyspace_name = :\"keyspace_name\"";
+        return "SELECT \"table_name\" "
+            ."FROM \"system_schema\".\"tables\" "
+            ."WHERE table_name = :\"table_name\" "
+            ."AND keyspace_name = :\"keyspace_name\"";
     }
 
     /**
@@ -44,7 +47,10 @@ class Grammar extends BaseGrammar
      */
     public function compileColumnListing()
     {
-        return "SELECT \"column_name\" FROM \"system_schema\".\"columns\" WHERE table_name = :\"table_name\" AND keyspace_name = :\"keyspace_name\"";
+        return "SELECT \"column_name\" "
+            ."FROM \"system_schema\".\"columns\" "
+            ."WHERE table_name = :\"table_name\" "
+            ."AND keyspace_name = :\"keyspace_name\"";
     }
 
     /**
@@ -78,43 +84,13 @@ class Grammar extends BaseGrammar
      */
     protected function compileCreateTable($blueprint, $command, $connection)
     {
-        return sprintf('%s table %s (%s, %s)',
+        return sprintf('%s table %s (%s, %s) %s',
             'create',
             $this->wrapTable($blueprint),
             implode(', ', $this->getColumns($blueprint)),
-            $this->compilePrimary($blueprint, $command)
+            $this->compilePrimary($blueprint, $command),
+            $this->compileWithOptions($blueprint, $command)
         );
-    }
-
-    /**
-     * Append the character set specifications to a command.
-     *
-     * @param  string  $sql
-     * @param  \Illuminate\Database\Connection  $connection
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
-     * @return string
-     */
-    protected function compileCreateEncoding($sql, Connection $connection, Blueprint $blueprint)
-    {
-        // First we will set the character set if one has been set on either the create
-        // blueprint itself or on the root configuration for the connection that the
-        // table is being created on. We will add these to the create table query.
-        if (isset($blueprint->charset)) {
-            $sql .= ' default character set '.$blueprint->charset;
-        } elseif (! is_null($charset = $connection->getConfig('charset'))) {
-            $sql .= ' default character set '.$charset;
-        }
-
-        // Next we will add the collation to the create table statement if one has been
-        // added to either this create table blueprint or the configuration for this
-        // connection that the query is targeting. We'll add it to this SQL query.
-        if (isset($blueprint->collation)) {
-            $sql .= ' collate '.$blueprint->collation;
-        } elseif (! is_null($collation = $connection->getConfig('collation'))) {
-            $sql .= ' collate '.$collation;
-        }
-
-        return $sql;
     }
 
     /**
@@ -160,6 +136,18 @@ class Grammar extends BaseGrammar
     public function compilePrimary(Blueprint $blueprint, Fluent $command)
     {
         return $blueprint->compilePrimary();
+    }
+
+    /**
+     * Compile with options.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return string
+     */
+    public function compileWithOptions(Blueprint $blueprint, Fluent $command)
+    {
+        return $blueprint->compileWithOptions();
     }
 
     /**

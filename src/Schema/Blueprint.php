@@ -2,12 +2,20 @@
 
 namespace AHAbid\EloquentCassandra\Schema;
 
+use AHAbid\EloquentCassandra\Exceptions\CassandraNoPrimarySetException;
 use Illuminate\Database\Schema\Blueprint as BaseBlueprint;
+use Illuminate\Support\Fluent;
 
 class Blueprint extends BaseBlueprint
 {
+    /** @var array */
+    protected $primaryKeys = [];
+
+    /** @var array */
+    protected $clusterKeys = [];
+
     /** @var mixed */
-    protected $primaryKey;
+    protected $withOptions;
 
     /**
      * Specify the primary key(s) for the table.
@@ -20,9 +28,30 @@ class Blueprint extends BaseBlueprint
     public function primary($columns, $name = null, $algorithm = null)
     {
         $columns = (array) $columns;
-        $this->primaryKey = $command = $this->createCommand('primary', compact('columns', 'algorithm'));
-        return $command;
+        if (isset($columns[0]) && !is_array($columns[0])) {
+            $columns[0] = (array) $columns[0];
+        }
+
+        if (count($columns) > 1) {
+            $this->clusterKeys = array_slice($columns, 1);
+        }
+
+        $this->primaryKeys = $columns[0];
+
+        return $this->createCommand('primary', compact('columns', 'algorithm'));
     }
+
+    /**
+     * Set With Options
+     *
+     * @param \Closure $callback
+     */
+    public function withOptions(\Closure $callback)
+    {
+        $this->withOptions = new WithOption;
+        $callback($this->withOptions);
+    }
+
 
     /**
      * Compile Primary
@@ -31,10 +60,31 @@ class Blueprint extends BaseBlueprint
      */
     public function compilePrimary()
     {
-        if ($this->primaryKey && 'primary' == $this->primaryKey->name) {
-            return sprintf('primary key ("%s") ', implode('", "', $this->primaryKey->columns));
+        if (empty($this->primaryKeys)) {
+            throw new CassandraNoPrimarySetException('No primary key has been set for the table.');
         }
-        return '';
+
+        $cql = sprintf(
+            'primary key (("%s"), "%s") ',
+            implode('", "', $this->primaryKeys),
+            implode('", "', $this->clusterKeys)
+        );
+
+        return str_replace('), "")', '))', $cql);
+    }
+
+    /**
+     * Compile With Options
+     *
+     * @return string
+     */
+    public function compileWithOptions()
+    {
+        if (empty($this->withOptions)) {
+            return '';
+        }
+
+        return $this->withOptions->compile();
     }
 
     /**
