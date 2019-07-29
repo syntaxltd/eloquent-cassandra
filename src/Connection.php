@@ -250,7 +250,21 @@ class Connection extends BaseConnection
      */
     protected function getDefaultSchemaGrammar()
     {
-        //return new Schema\Grammar();
+        return new Schema\Grammar();
+    }
+
+    /**
+     * Get a schema builder instance for the connection.
+     *
+     * @return \Illuminate\Database\Schema\Builder
+     */
+    public function getSchemaBuilder()
+    {
+        if (is_null($this->schemaGrammar)) {
+            $this->useDefaultSchemaGrammar();
+        }
+
+        return new Schema\Builder($this);
     }
 
     /**
