@@ -126,6 +126,23 @@ class Blueprint extends BaseBlueprint
     }
 
     /**
+     * Create an integer column on the table.
+     *
+     * @param  string  $column
+     * @param  bool  $autoIncrement
+     * @param  bool  $unsigned
+     * @return \Illuminate\Database\Schema\ColumnDefinition
+     */
+    public function integer($column, $autoIncrement = false, $unsigned = false)
+    {
+        if ($autoIncrement == true) {
+            return $this->uuid($column);
+        }
+
+        return $this->addColumn('int', $column);
+    }
+
+    /**
      * Create a new list column on the table.
      *
      * @param  string $column
