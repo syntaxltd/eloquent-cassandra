@@ -2,6 +2,7 @@
 
 namespace AHAbid\EloquentCassandra;
 
+use AHAbid\EloquentCassandra\Repository\DatabaseMigrationRepository;
 use Illuminate\Support\ServiceProvider;
 
 class CassandraServiceProvider extends ServiceProvider
@@ -18,6 +19,19 @@ class CassandraServiceProvider extends ServiceProvider
 
                 return new Connection((new CassandraConnector)->connect($config), $config);
             });
+        });
+
+    }
+
+    /**
+     * Boot the service provider
+     */
+    public function boot()
+    {
+        $this->app->singleton('migration.repository', function ($app) {
+            $table = $app['config']['database.migrations'];
+
+            return new DatabaseMigrationRepository($app['db'], $table);
         });
     }
 }
