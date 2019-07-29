@@ -346,6 +346,17 @@ class Grammar extends BaseGrammar
     }
 
     /**
+     * Create the column definition for an int type.
+     *
+     * @param  \Illuminate\Support\Fluent  $column
+     * @return string
+     */
+    protected function typeInt(Fluent $column)
+    {
+        return 'int';
+    }
+
+    /**
      * Create the column definition for an integer type.
      *
      * @param  \Illuminate\Support\Fluent  $column
