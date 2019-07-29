@@ -21,6 +21,41 @@ class DatabaseMigrationRepository extends BaseDatabaseMigrationRepository
     }
 
     /**
+     * Get list of migrations.
+     *
+     * @param  int  $steps
+     * @return array
+     */
+    public function getMigrations($steps)
+    {
+        $query = $this->table()->where('batch', '>=', '1');
+
+        if (method_exists($query, 'allowFiltering')) {
+            $query = $query->allowFiltering();
+        }
+
+        return $query->orderBy('batch', 'desc')
+                     ->orderBy('migration', 'desc')
+                     ->take($steps)->get()->all();
+    }
+
+    /**
+     * Get the last migration batch.
+     *
+     * @return array
+     */
+    public function getLast()
+    {
+        $query = $this->table()->where('batch', $this->getLastBatchNumber());
+
+        if (method_exists($query, 'allowFiltering')) {
+            $query = $query->allowFiltering();
+        }
+
+        return $query->orderBy('migration', 'desc')->get()->all();
+    }
+
+    /**
      * Create the migration repository data store.
      *
      * @return void
@@ -56,5 +91,22 @@ class DatabaseMigrationRepository extends BaseDatabaseMigrationRepository
         ];
 
         $this->table()->insert($record);
+    }
+
+    /**
+     * Remove a migration from the log.
+     *
+     * @param  object  $migration
+     * @return void
+     */
+    public function delete($migration)
+    {
+        $query = $this->table()->where('migration', $migration->migration);
+
+        if (method_exists($query, 'allowFiltering')) {
+            $query = $query->allowFiltering();
+        }
+
+        $query->delete();
     }
 }
