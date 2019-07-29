@@ -30,10 +30,6 @@ class DatabaseMigrationRepository extends BaseDatabaseMigrationRepository
     {
         $query = $this->table()->where('batch', '>=', '1');
 
-        if (method_exists($query, 'allowFiltering')) {
-            $query = $query->allowFiltering();
-        }
-
         return $query->orderBy('batch', 'desc')
                      ->orderBy('migration', 'desc')
                      ->take($steps)->get()->all();
@@ -47,10 +43,6 @@ class DatabaseMigrationRepository extends BaseDatabaseMigrationRepository
     public function getLast()
     {
         $query = $this->table()->where('batch', $this->getLastBatchNumber());
-
-        if (method_exists($query, 'allowFiltering')) {
-            $query = $query->allowFiltering();
-        }
 
         return $query->orderBy('migration', 'desc')->get()->all();
     }
@@ -71,7 +63,12 @@ class DatabaseMigrationRepository extends BaseDatabaseMigrationRepository
             $table->uuid('id');
             $table->string('migration');
             $table->integer('batch');
-            $table->primary('id');
+            $table->primary([['id'], 'migration', 'batch']);
+
+            $table->withOptions(function($option) {
+                $option->orderBy('migration', 'DESC');
+                $option->orderBy('batch', 'DESC');
+            });
         });
     }
 
@@ -101,12 +98,6 @@ class DatabaseMigrationRepository extends BaseDatabaseMigrationRepository
      */
     public function delete($migration)
     {
-        $query = $this->table()->where('migration', $migration->migration);
-
-        if (method_exists($query, 'allowFiltering')) {
-            $query = $query->allowFiltering();
-        }
-
-        $query->delete();
+        $this->table()->where('migration', $migration->migration)->delete();
     }
 }
