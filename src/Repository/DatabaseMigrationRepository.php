@@ -63,11 +63,11 @@ class DatabaseMigrationRepository extends BaseDatabaseMigrationRepository
             $table->uuid('id');
             $table->string('migration');
             $table->integer('batch');
-            $table->primary([['id'], 'migration', 'batch']);
+            $table->primary([['id'], 'batch', 'migration']);
 
             $table->withOptions(function($option) {
-                $option->orderBy('migration', 'DESC');
                 $option->orderBy('batch', 'DESC');
+                $option->orderBy('migration', 'DESC');
             });
         });
     }
