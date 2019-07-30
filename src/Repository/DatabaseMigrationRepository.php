@@ -66,17 +66,7 @@ class DatabaseMigrationRepository extends BaseDatabaseMigrationRepository
             $table->uuid('id');
             $table->string('migration');
             $table->integer('batch');
-
-            if ($driver == 'cassandra') {
-                $table->primary([['id'], 'batch', 'migration']);
-
-                $table->withOptions(function($option) {
-                    $option->orderBy('batch', 'DESC');
-                    $option->orderBy('migration', 'DESC');
-                });
-            } else {
-                $table->primary('id');
-            }
+            $table->primary('id');
         });
     }
 
