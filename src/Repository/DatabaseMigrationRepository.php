@@ -28,11 +28,12 @@ class DatabaseMigrationRepository extends BaseDatabaseMigrationRepository
      */
     public function getMigrations($steps)
     {
-        $query = $this->table()->where('batch', '>=', '1');
-
-        return $query->orderBy('batch', 'desc')
-                     ->orderBy('migration', 'desc')
-                     ->take($steps)->get()->all();
+        return $this->table()
+            ->get()
+            ->where('batch', '>=', '1')
+            ->sortByDesc('batch')
+            ->take($steps)
+            ->all();
     }
 
     /**
@@ -42,9 +43,10 @@ class DatabaseMigrationRepository extends BaseDatabaseMigrationRepository
      */
     public function getLast()
     {
-        $query = $this->table()->where('batch', $this->getLastBatchNumber());
-
-        return $query->orderBy('migration', 'desc')->get()->all();
+        return $this->table()
+            ->get()
+            ->where('batch', '=', $this->getLastBatchNumber())
+            ->all();
     }
 
     /**
@@ -55,20 +57,26 @@ class DatabaseMigrationRepository extends BaseDatabaseMigrationRepository
     public function createRepository()
     {
         $schema = $this->getConnection()->getSchemaBuilder();
+        $driver = $this->getConnection()->getDriverName();
 
-        $schema->create($this->table, function ($table) {
+        $schema->create($this->table, function ($table) use ($driver) {
             // The migrations table is responsible for keeping track of which of the
             // migrations have actually run for the application. We'll create the
             // table to hold the migration file's path as well as the batch ID.
             $table->uuid('id');
             $table->string('migration');
             $table->integer('batch');
-            $table->primary([['id'], 'batch', 'migration']);
 
-            $table->withOptions(function($option) {
-                $option->orderBy('batch', 'DESC');
-                $option->orderBy('migration', 'DESC');
-            });
+            if ($driver == 'cassandra') {
+                $table->primary([['id'], 'batch', 'migration']);
+
+                $table->withOptions(function($option) {
+                    $option->orderBy('batch', 'DESC');
+                    $option->orderBy('migration', 'DESC');
+                });
+            } else {
+                $table->primary('id');
+            }
         });
     }
 
@@ -98,6 +106,13 @@ class DatabaseMigrationRepository extends BaseDatabaseMigrationRepository
      */
     public function delete($migration)
     {
-        $this->table()->where('migration', $migration->migration)->delete();
+        $row = $this->table()
+            ->get()
+            ->where('migration', '=', $migration->migration)
+            ->first();
+
+        if ($row) {
+            $this->table()->where('id', '=', $row['id'])->delete();
+        }
     }
 }
