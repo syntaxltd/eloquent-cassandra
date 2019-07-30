@@ -49,4 +49,45 @@ class Builder extends BaseBuilder
 
         return new Blueprint($table, $callback, $prefix);
     }
+
+    /**
+     * Drop all tables from the database.
+     *
+     * @return void
+     *
+     * @throws \LogicException
+     */
+    public function dropAllTables()
+    {
+        $tables = [];
+
+        foreach ($this->getAllTables() as $row) {
+            $row = (array) $row;
+
+            $tables[] = reset($row);
+        }
+
+        if (empty($tables)) {
+            return;
+        }
+
+        foreach ($tables as $table) {
+            $this->connection->statement(
+                $this->grammar->compileDropTableIfExists($table)
+            );
+        }
+    }
+
+    /**
+     * Get all of the table names for the database.
+     *
+     * @return array
+     */
+    protected function getAllTables()
+    {
+        return $this->connection->select(
+            $this->grammar->compileGetAllTables(),
+            ['keyspace_name' => $this->connection->getKeyspace()]
+        );
+    }
 }

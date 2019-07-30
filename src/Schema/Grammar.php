@@ -206,6 +206,17 @@ class Grammar extends BaseGrammar
     }
 
     /**
+     * Compile a drop by table name.
+     *
+     * @param  string  $table
+     * @return string
+     */
+    public function compileDropTable($table)
+    {
+        return 'drop table '.$this->wrapTable($table);
+    }
+
+    /**
      * Compile a drop table (if exists) command.
      *
      * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
@@ -215,6 +226,17 @@ class Grammar extends BaseGrammar
     public function compileDropIfExists(Blueprint $blueprint, Fluent $command)
     {
         return 'drop table if exists '.$this->wrapTable($blueprint);
+    }
+
+    /**
+     * Compile a drop by table name.
+     *
+     * @param  string  $table
+     * @return string
+     */
+    public function compileDropTableIfExists($table)
+    {
+        return 'drop table if exists '.$this->wrapTable($table);
     }
 
     /**
@@ -319,7 +341,9 @@ class Grammar extends BaseGrammar
      */
     public function compileGetAllTables()
     {
-        return 'SHOW FULL TABLES WHERE table_type = \'BASE TABLE\'';
+        return "SELECT \"table_name\" "
+            ."FROM \"system_schema\".\"tables\" "
+            ."WHERE keyspace_name = :\"keyspace_name\"";
     }
 
     /**
