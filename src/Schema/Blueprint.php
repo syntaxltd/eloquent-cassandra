@@ -4,7 +4,6 @@ namespace AHAbid\EloquentCassandra\Schema;
 
 use AHAbid\EloquentCassandra\Exceptions\CassandraNoPrimarySetException;
 use Illuminate\Database\Schema\Blueprint as BaseBlueprint;
-use Illuminate\Support\Fluent;
 
 class Blueprint extends BaseBlueprint
 {
