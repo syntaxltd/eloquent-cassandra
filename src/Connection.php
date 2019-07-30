@@ -93,6 +93,18 @@ class Connection extends BaseConnection
     }
 
     /**
+     * Get a new query builder instance.
+     *
+     * @return \AHAbid\EloquentCassandra\Query\Builder
+     */
+    public function query()
+    {
+        return new Query\Builder(
+            $this, $this->getQueryGrammar(), $this->getPostProcessor()
+        );
+    }
+
+    /**
      * return Cassandra cluster.
      *
      * @return \Cassandra\Cluster
