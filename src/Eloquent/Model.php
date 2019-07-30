@@ -2,15 +2,16 @@
 
 namespace AHAbid\EloquentCassandra\Eloquent;
 
+use AHAbid\EloquentCassandra\CassandraTypesTrait;
+use AHAbid\EloquentCassandra\Collection;
+use AHAbid\EloquentCassandra\Eloquent\Builder as EloquentCassandraEloquentBuilder;
 use Carbon\Carbon;
 use Cassandra\Date;
 use Cassandra\Rows;
 use Cassandra\Time;
 use Cassandra\Timestamp;
-use AHAbid\EloquentCassandra\CassandraTypesTrait;
-use AHAbid\EloquentCassandra\Collection;
-use AHAbid\EloquentCassandra\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\Model as BaseModel;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 
 abstract class Model extends BaseModel
 {
@@ -50,17 +51,13 @@ abstract class Model extends BaseModel
      */
     public function newEloquentBuilder($query)
     {
-        return new Builder($query);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function newBaseQueryBuilder()
-    {
         $connection = $this->getConnection();
 
-        return new QueryBuilder($connection, null, $connection->getPostProcessor());
+        if ($connection->getDriverName() == 'cassandra') {
+            return new EloquentCassandraEloquentBuilder($query);
+        }
+
+        return new EloquentBuilder($query);
     }
 
     /**
@@ -287,56 +284,54 @@ abstract class Model extends BaseModel
             return false;
         }
 
+        // Default result
+        $saved = true;
+
         // If the model already exists in the database we can just update our record
         // that is already in this database using the current IDs in this "where"
         // clause to only update this model. Otherwise, we'll just insert them.
-        if ($this->exists) {
-            if ($this->isDirty()) {
-                // If any of primary key columns where updated cassandra won't be able
-                // to process update of existed record. That is why existed record will
-                // be deleted and inserted new one
-                $dirtyKeys = array_keys($this->getDirty());
-                $dirtyPrimaryKeys = array_intersect($this->primaryColumns, $dirtyKeys);
-                $dirtyPrimaryExists = count($dirtyPrimaryKeys) > 0;
+        if ($this->exists && $this->isDirty()) {
+            // If any of primary key columns where updated cassandra won't be able
+            // to process update of existed record. That is why existed record will
+            // be deleted and inserted new one
+            $dirtyKeys = array_keys($this->getDirty());
+            $dirtyPrimaryKeys = array_intersect($this->primaryColumns, $dirtyKeys);
+            $dirtyPrimaryExists = count($dirtyPrimaryKeys) > 0;
 
-                // Check if any of primary key columns is dirty
-                if (!$dirtyPrimaryExists) {
-                    $primaryColumnsExceptId = array_diff($this->primaryColumns, [$this->primaryKey]);
+            // Check if any of primary key columns is dirty
+            if (!$dirtyPrimaryExists) {
+                $primaryColumnsExceptId = array_diff($this->primaryColumns, [$this->primaryKey]);
 
-                    foreach ($primaryColumnsExceptId as $key) {
-                        $query->where($key, $this->attributes[$key]);
-                    }
-
-                    $saved = $this->performUpdate($query);
-                } else {
-                    $this->fireModelEvent('updating');
-
-                    // Disable model deleting, deleted, creating and created events
-                    $ed = $this->getEventDispatcher();
-                    $this->unsetEventDispatcher();
-
-                    $oldValues = $this->original;
-                    // Insert new record (duplicate)
-                    $saved = $this->performInsert($query);
-
-                    // Delete old record
-                    $deleteQuery = static::query();
-
-                    foreach ($this->primaryColumns as $key) {
-                        $deleteQuery->where($key, $oldValues[$key]);
-                    }
-
-                    $deleteQuery->delete();
-
-                    //Already in silent mode
-                    if ($ed !== null) {
-                        $this->setEventDispatcher($ed);
-                    }
-
-                    $this->fireModelEvent('updated');
+                foreach ($primaryColumnsExceptId as $key) {
+                    $query->where($key, $this->attributes[$key]);
                 }
+
+                $saved = $this->performUpdate($query);
             } else {
-                $saved = true;
+                $this->fireModelEvent('updating');
+
+                // Disable model deleting, deleted, creating and created events
+                $ed = $this->getEventDispatcher();
+                $this->unsetEventDispatcher();
+
+                $oldValues = $this->original;
+
+                // Insert new record (duplicate)
+                $saved = $this->performInsert($query);
+
+                // Delete old record
+                $deleteQuery = static::query();
+                foreach ($this->primaryColumns as $key) {
+                    $deleteQuery->where($key, $oldValues[$key]);
+                }
+                $deleteQuery->delete();
+
+                //Already in silent mode
+                if ($ed !== null) {
+                    $this->setEventDispatcher($ed);
+                }
+
+                $this->fireModelEvent('updated');
             }
         }
 
