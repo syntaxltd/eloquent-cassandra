@@ -165,6 +165,22 @@ abstract class Model extends BaseModel
     }
 
     /**
+     * Create a new model instance that is existing.
+     *
+     * @param  array  $attributes
+     * @param  string|null  $connection
+     * @return static
+     */
+    public function newFromBuilder($attributes = [], $connection = null)
+    {
+        foreach ($attributes as $k => $v) {
+            $attributes[$k] = $this->isCassandraValueObject($v) ? $this->valueFromCassandraObject($v) : $v;
+        }
+
+        return parent::newFromBuilder($attributes, $connection);
+    }
+
+    /**
      * Determine if the new and old values for a given key are equivalent.
      *
      * @param string $key
