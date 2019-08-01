@@ -135,7 +135,7 @@ class Builder extends BaseBuilder
         }
 
         // Get results from all pages
-        $collection = new Collection($results);
+        $collection = new Collection($newResults);
 
         if ($this->fetchAllResults) {
             while (!$results->isLastPage()) {
