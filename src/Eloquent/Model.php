@@ -374,4 +374,21 @@ abstract class Model extends BaseModel
         return $saved;
     }
 
+    /**
+     * Convert the model instance to an array.
+     *
+     * @return array
+     */
+    public function toArray()
+    {
+        $data = parent::toArray();
+
+        foreach ($data as $key => $value) {
+            if ($this->isCassandraValueObject($value)) {
+                $data[$key] = $this->valueFromCassandraObject($value);
+            }
+        }
+
+        return $data;
+    }
 }
