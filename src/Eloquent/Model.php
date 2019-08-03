@@ -173,9 +173,9 @@ abstract class Model extends BaseModel
      */
     public function newFromBuilder($attributes = [], $connection = null)
     {
-        foreach ($attributes as $k => $v) {
-            $attributes[$k] = $this->isCassandraValueObject($v) ? $this->valueFromCassandraObject($v) : $v;
-        }
+        // foreach ($attributes as $k => $v) {
+        //     $attributes[$k] = $this->isCassandraValueObject($v) ? $this->valueFromCassandraObject($v) : $v;
+        // }
 
         return parent::newFromBuilder($attributes, $connection);
     }

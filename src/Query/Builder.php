@@ -129,23 +129,18 @@ class Builder extends BaseBuilder
         /** @var \Cassandra\Rows $results */
         $results = $this->processor->processSelect($this, $this->runSelect($options));
 
-        $newResults = [];
-        foreach ($results as $row) {
-            $newResults[] = $this->parseRowTypes($row);
-        }
-
         // Get results from all pages
-        $collection = new Collection($newResults);
+        $collection = new Collection($results);
 
         if ($this->fetchAllResults) {
             while (!$results->isLastPage()) {
                 $results = $results->nextPage();
                 foreach ($results as $row) {
-                    $row = $this->parseRowTypes($row);
                     $collection->push($row);
                 }
             }
         }
+
         $collection->setRowsInstance($results);
 
         $this->columns = $original;
@@ -216,24 +211,5 @@ class Builder extends BaseBuilder
         $this->fetchAllResults = true;
 
         return $result;
-    }
-
-    /**
-     * Parse Row Types
-     *
-     * @param array $row
-     * @return array
-     */
-    public function parseRowTypes($row)
-    {
-        $newRow = [];
-
-        foreach ($row as $field => $value) {
-            $newRow[$field] = $this->isCassandraValueObject($value)
-                ? $this->valueFromCassandraObject($value)
-                : $value;
-        }
-
-        return $newRow;
     }
 }
