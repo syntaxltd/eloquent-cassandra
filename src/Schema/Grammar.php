@@ -171,7 +171,12 @@ class Grammar extends BaseGrammar
      */
     public function compileIndex(Blueprint $blueprint, Fluent $command)
     {
-        return $this->compileKey($blueprint, $command, 'index');
+        return sprintf(
+            'CREATE INDEX %s ON %s (%s)',
+            $this->wrap($command->index),
+            $this->wrapTable($blueprint),
+            $this->columnize($command->columns)
+        );
     }
 
     /**
