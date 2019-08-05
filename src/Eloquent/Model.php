@@ -37,7 +37,7 @@ abstract class Model extends BaseModel
      *
      * @var string
      */
-    protected $timeFormat;
+    protected $timeFormat = 'H:i:s';
 
     /**
      * List of columns in primary key
