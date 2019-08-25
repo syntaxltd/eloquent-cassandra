@@ -27,19 +27,18 @@ class Builder extends BaseBuilder
     protected $pageSize = null;
 
     /**
+     * Paginate for page
+     *
+     * @var null|int
+     */
+    protected $paginateForPage = null;
+
+    /**
      * Pagination state token
      *
      * @var null|string
      */
     protected $paginationStateToken = null;
-
-    /**
-     * Indicate what amount of pages should be fetched
-     * all or single
-     *
-     * @var bool
-     */
-    protected $fetchAllResults = true;
 
     /**
      * @inheritdoc
@@ -129,14 +128,34 @@ class Builder extends BaseBuilder
         /** @var \Cassandra\Rows $results */
         $results = $this->processor->processSelect($this, $this->runSelect($options));
 
-        // Get results from all pages
-        $collection = new Collection($results);
+        // Make a new collection
+        $collection = new Collection();
 
-        if ($this->fetchAllResults) {
+        if ($this->paginateForPage === null) {
+            $this->storeInCollection($collection, $results);
+
             while (!$results->isLastPage()) {
                 $results = $results->nextPage();
                 foreach ($results as $row) {
                     $collection->push($row);
+                }
+            }
+        } else {
+
+            $loopingPage = 0;
+            while (true) {
+                $loopingPage++;
+                if ($loopingPage !== $this->paginateForPage) {
+                    if ($results->isLastPage()) {
+                        break;
+                    }
+
+                    $results = $results->nextPage();
+                    continue;
+                }
+
+                foreach ($results as $row) {
+                    $this->storeInCollection($collection, $results);
                 }
             }
         }
@@ -186,30 +205,38 @@ class Builder extends BaseBuilder
      */
     public function setPageSize($pageSize = null)
     {
-        if ($pageSize !== null) {
-            $this->pageSize = (int) $pageSize;
-        } else {
-            $this->pageSize = $pageSize;
-        }
+        $this->pageSize = $pageSize !== null ? (int) $pageSize : $pageSize;
 
         return $this;
     }
 
     /**
-     * Get collection with single page results
+     * Set the limit and offset for a given page.
      *
-     * @param $columns array
-     *
-     * @return \Illuminate\Support\Collection
+     * @param  int  $page
+     * @param  int  $perPage
+     * @return \Illuminate\Database\Query\Builder|static
      */
-    public function getPage($columns = ['*'])
+    public function forPage($page, $perPage = 15)
     {
-        $this->fetchAllResults = false;
+        $this->paginateForPage = (int) $page;
 
-        $result = $this->get($columns);
+        return $this->setPageSize($perPage);
+    }
 
-        $this->fetchAllResults = true;
+    /**
+     * Store in Collections
+     *
+     * @param Collection $collection
+     * @param array $results
+     * @return Collection
+     */
+    protected function storeInCollection(Collection $collection, $results)
+    {
+        foreach ($results as $item) {
+            $collection->push($item);
+        }
 
-        return $result;
+        return $collection;
     }
 }
