@@ -462,7 +462,7 @@ class Grammar extends BaseGrammar
      */
     protected function typeBoolean(Fluent $column)
     {
-        return 'tinyint(1)';
+        return 'boolean';
     }
 
     /**
