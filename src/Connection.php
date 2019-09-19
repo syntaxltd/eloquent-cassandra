@@ -83,13 +83,13 @@ class Connection extends BaseConnection
      * @param string $table
      * @return Query\Builder
      */
-    public function table($table)
+    public function table($table, $as = NULL)
     {
         $processor = $this->getPostProcessor();
 
         $query = new Query\Builder($this, null, $processor);
 
-        return $query->from($table);
+        return $query->from($table, $as);
     }
 
     /**
